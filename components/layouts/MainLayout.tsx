@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Breadcrumb, Button, Avatar, Dropdown, theme, Typography } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Layout, Menu, Breadcrumb, Button, Avatar, Dropdown, Typography } from 'antd';
 import {
   DashboardOutlined,
   UserOutlined,
@@ -14,10 +14,13 @@ import {
   PrinterOutlined,
   TeamOutlined,
   AppstoreOutlined,
-  SettingOutlined
+  SettingOutlined,
+  NodeIndexOutlined,
+  ToolOutlined
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { getUser, getAccessibleModules, User } from '@/lib/auth';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
@@ -29,16 +32,16 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children, portal }: MainLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('ppms_user');
+    const savedUser = getUser();
     if (!savedUser) {
       router.push('/login');
     } else {
-      setUser(JSON.parse(savedUser));
+      setUser(savedUser);
     }
   }, [router]);
 
@@ -47,24 +50,67 @@ export default function MainLayout({ children, portal }: MainLayoutProps) {
     router.push('/login');
   };
 
-  const menuItems = portal === 'management' ? [
-    { key: '/management/dashboard', icon: <DashboardOutlined />, label: <Link href="/management/dashboard">Dashboard</Link> },
-    { key: '/management/crm', icon: <UserOutlined />, label: <Link href="/management/crm">Khách hàng</Link> },
-    { key: '/management/orders', icon: <ShoppingCartOutlined />, label: <Link href="/management/orders">Đơn hàng</Link> },
-    { 
-      key: 'organization', 
-      icon: <TeamOutlined />, 
-      label: 'Tổ chức',
-      children: [
-        { key: '/management/organization/departments', icon: <AppstoreOutlined />, label: <Link href="/management/organization/departments">Bộ phận</Link> },
-        { key: '/management/organization/staff', icon: <TeamOutlined />, label: <Link href="/management/organization/staff">Nhân sự</Link> },
-      ]
-    },
-    { key: '/management/config', icon: <SettingOutlined />, label: <Link href="/management/config">Cấu hình hệ thống</Link> },
-  ] : [
-    { key: '/operation/tasks', icon: <ContainerOutlined />, label: <Link href="/operation/tasks">Nhiệm vụ</Link> },
-    { key: '/operation/warehouse', icon: <DatabaseOutlined />, label: <Link href="/operation/warehouse">Kho</Link> },
-  ];
+  // Filter menu items based on user permissions
+  const menuItems = useMemo(() => {
+    if (!user) return [];
+    
+    const accessibleModules = getAccessibleModules(user);
+    
+    if (portal === 'management') {
+      const items = [];
+      
+      if (accessibleModules.includes('dashboard')) {
+        items.push({ key: '/management/dashboard', icon: <DashboardOutlined />, label: <Link href="/management/dashboard">Dashboard</Link> });
+      }
+      
+      if (accessibleModules.includes('crm')) {
+        items.push({ key: '/management/crm', icon: <UserOutlined />, label: <Link href="/management/crm">Khách hàng</Link> });
+      }
+      
+      if (accessibleModules.includes('orders')) {
+        items.push({ key: '/management/orders', icon: <ShoppingCartOutlined />, label: <Link href="/management/orders">Đơn hàng</Link> });
+      }
+      
+      if (accessibleModules.includes('organization')) {
+        items.push({ 
+          key: 'organization', 
+          icon: <TeamOutlined />, 
+          label: 'Tổ chức',
+          children: [
+            { key: '/management/organization/departments', icon: <AppstoreOutlined />, label: <Link href="/management/organization/departments">Bộ phận</Link> },
+            { key: '/management/organization/staff', icon: <TeamOutlined />, label: <Link href="/management/organization/staff">Nhân sự</Link> },
+          ]
+        });
+      }
+      
+      if (accessibleModules.includes('config')) {
+        items.push({ 
+          key: 'config', 
+          icon: <SettingOutlined />, 
+          label: 'Cấu hình',
+          children: [
+            { key: '/management/config', icon: <SettingOutlined />, label: <Link href="/management/config">Tổng quan</Link> },
+            { key: '/management/config/workflows', icon: <NodeIndexOutlined />, label: <Link href="/management/config/workflows">Quy trình mẫu</Link> },
+            { key: '/management/config/machines', icon: <ToolOutlined />, label: <Link href="/management/config/machines">Máy móc</Link> },
+          ]
+        });
+      }
+      
+      return items;
+    } else {
+      const items = [];
+      
+      if (accessibleModules.includes('tasks')) {
+        items.push({ key: '/operation/tasks', icon: <ContainerOutlined />, label: <Link href="/operation/tasks">Nhiệm vụ</Link> });
+      }
+      
+      if (accessibleModules.includes('warehouse')) {
+        items.push({ key: '/operation/warehouse', icon: <DatabaseOutlined />, label: <Link href="/operation/warehouse">Kho</Link> });
+      }
+      
+      return items;
+    }
+  }, [user, portal]);
 
   const userMenuItems = [
     { key: 'profile', label: <Link href="/profile">Hồ sơ cá nhân</Link>, icon: <UserOutlined /> },
@@ -84,6 +130,13 @@ export default function MainLayout({ children, portal }: MainLayoutProps) {
                   : path === 'orders' ? 'Đơn hàng'
                   : path === 'tasks' ? 'Nhiệm vụ'
                   : path === 'warehouse' ? 'Kho'
+                  : path === 'departments' ? 'Bộ phận'
+                  : path === 'staff' ? 'Nhân sự'
+                  : path === 'organization' ? 'Tổ chức'
+                  : path === 'config' ? 'Cấu hình'
+                  : path === 'workflows' ? 'Quy trình mẫu'
+                  : path === 'machines' ? 'Máy móc'
+                  : path === 'profile' ? 'Hồ sơ'
                   : path;
       return { title: isLast ? label : <Link href={url}>{label}</Link> };
     });
@@ -110,8 +163,8 @@ export default function MainLayout({ children, portal }: MainLayoutProps) {
           </div>
           <div className="flex items-center">
             <div className="mr-4 text-right hidden sm:block">
-              <div className="font-medium text-sm">{(user as any).full_name || (user as any).username}</div>
-              <div className="text-xs text-gray-400">{(user as any).role?.name} - {(user as any).department?.name}</div>
+              <div className="font-medium text-sm">{user.full_name || user.username}</div>
+              <div className="text-xs text-gray-400">{user.role?.name} - {user.department?.name}</div>
             </div>
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
               <Avatar size="large" icon={<UserOutlined />} className="bg-blue-100 text-blue-600 cursor-pointer" />

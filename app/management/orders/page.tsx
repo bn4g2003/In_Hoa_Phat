@@ -23,6 +23,7 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import CreateOrderModal from '@/components/orders/CreateOrderModal';
 import OrderDetailModal from '@/components/orders/OrderDetailModal';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -30,10 +31,11 @@ const { RangePicker } = DatePicker;
 
 export default function OrdersPage() {
   const [data, setData] = useState<any[]>([]);
+  const [filteredData, setFilteredData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [dateRange, setDateRange] = useState<any>(null);
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
   
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -58,6 +60,8 @@ export default function OrdersPage() {
       if (error) throw error;
       
       let filtered = orders || [];
+      
+      // Search filter
       if (search) {
         filtered = filtered.filter(o => 
           o.code.toLowerCase().includes(search.toLowerCase()) ||
@@ -66,14 +70,16 @@ export default function OrdersPage() {
         );
       }
 
-      if (dateRange && dateRange[0] && dateRange[1]) {
+      // Date range filter
+      if (dateRange) {
         filtered = filtered.filter(o => {
-          const date = new Date(o.created_at);
-          return date >= dateRange[0].toDate() && date <= dateRange[1].toDate();
+          const created = dayjs(o.created_at);
+          return created.isAfter(dateRange[0].startOf('day')) && created.isBefore(dateRange[1].endOf('day'));
         });
       }
 
-      setData(filtered);
+      setData(orders || []);
+      setFilteredData(filtered);
     } catch (err) {
       console.error(err);
       message.error('Lỗi khi tải danh sách đơn hàng');
@@ -86,37 +92,44 @@ export default function OrdersPage() {
     fetchOrders();
   }, [statusFilter, dateRange]);
 
+  // Export filtered data
   const exportToExcel = () => {
-    const exportData = data.map(o => ({
+    const exportData = filteredData.map(o => ({
       "Mã đơn": o.code,
       "Khách hàng": o.customers?.name,
       "Nội dung": o.title,
       "Số lượng": o.specs?.quantity,
+      "Đơn vị": o.specs?.unit,
+      "Khổ giấy": o.specs?.size,
       "Trạng thái": o.status.toUpperCase(),
+      "Tổng tiền": o.financials?.total_with_vat?.toLocaleString(),
+      "Đã thu": o.financials?.received?.toLocaleString(),
       "Ngày tạo": new Date(o.created_at).toLocaleDateString('vi-VN')
     }));
     
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Orders");
-    XLSX.writeFile(wb, `LSX_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `LSX_DonHang_${new Date().toISOString().split('T')[0]}.xlsx`);
+    message.success(`Đã xuất ${filteredData.length} đơn hàng ra Excel`);
   };
 
   const exportToPDF = () => {
     const doc = new jsPDF() as any;
-    const tableColumn = ["Ma don", "Khac hang", "Noi dung", "SL", "Trang thai", "Ngay"];
-    const tableRows = data.map(o => [
+    const tableColumn = ["Ma don", "Khach hang", "Noi dung", "SL", "Trang thai", "Ngay"];
+    const tableRows = filteredData.map(o => [
       o.code,
       o.customers?.name || "",
-      o.title,
+      o.title?.substring(0, 30),
       o.specs?.quantity,
       o.status,
       new Date(o.created_at).toLocaleDateString('vi-VN')
     ]);
 
     doc.autoTable(tableColumn, tableRows, { startY: 20 });
-    doc.text("DANH SACH LENH SAN XUAT (PPMS)", 14, 15);
-    doc.save(`LSX_Export_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.text(`DANH SACH LENH SAN XUAT - ${filteredData.length} DON`, 14, 15);
+    doc.save(`LSX_DonHang_${new Date().toISOString().split('T')[0]}.pdf`);
+    message.success(`Đã xuất ${filteredData.length} đơn hàng ra PDF`);
   };
 
   const columns = [
@@ -149,24 +162,43 @@ export default function OrdersPage() {
       key: 'status',
       render: (status: string) => {
         let color = status === 'completed' ? 'green' : status === 'in_progress' ? 'blue' : 'orange';
-        return <Tag color={color}>{status.toUpperCase()}</Tag>;
+        let icon = status === 'completed' ? <CheckCircleOutlined /> : status === 'in_progress' ? <ClockCircleOutlined /> : <WarningOutlined />;
+        return <Tag color={color} icon={icon}>{status.toUpperCase()}</Tag>;
       },
+    },
+    {
+      title: 'Tiền thu',
+      key: 'financials',
+      render: (record: any) => {
+        const received = record.financials?.received || 0;
+        const total = record.financials?.total_with_vat || 0;
+        const percent = total > 0 ? Math.round((received / total) * 100) : 0;
+        return (
+          <Tooltip title={`${received.toLocaleString()} / ${total.toLocaleString()} đ`}>
+            <Progress percent={percent} size="small" status={percent === 100 ? 'success' : 'active'} />
+          </Tooltip>
+        );
+      },
+    },
+    {
+      title: 'Ngày tạo',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
     },
     {
       title: 'Thao tác',
       key: 'action',
       fixed: 'right' as const,
-      width: 120,
+      width: 100,
       render: (_: any, record: any) => (
-        <Space>
-          <Tooltip title="Xem chi tiết">
-            <Button 
-              type="text" 
-              icon={<EyeOutlined />} 
-              onClick={() => { setSelectedOrder(record); setDetailModalVisible(true); }} 
-            />
-          </Tooltip>
-        </Space>
+        <Tooltip title="Xem chi tiết">
+          <Button 
+            type="text" 
+            icon={<EyeOutlined />} 
+            onClick={() => { setSelectedOrder(record); setDetailModalVisible(true); }} 
+          />
+        </Tooltip>
       ),
     },
   ];
@@ -179,7 +211,7 @@ export default function OrdersPage() {
           <Text type="secondary">Quản lý và theo dõi tiến độ các đơn hàng sản xuất</Text>
         </div>
         <Space size="middle">
-          <Button icon={<FileExcelOutlined />} onClick={exportToExcel}>Xuất Excel</Button>
+          <Button icon={<FileExcelOutlined />} onClick={exportToExcel}>Xuất Excel ({filteredData.length})</Button>
           <Button icon={<FilePdfOutlined />} onClick={exportToPDF}>Xuất PDF</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>
             Lên Lệnh Mới
@@ -189,7 +221,7 @@ export default function OrdersPage() {
 
       <Card className="shadow-sm border-none p-2">
         <Row gutter={16} align="middle" className="mb-4">
-          <Col span={8}>
+          <Col span={6}>
             <Input 
               prefix={<SearchOutlined />} 
               placeholder="Tìm theo mã đơn, khách hàng, nội dung..." 
@@ -199,7 +231,7 @@ export default function OrdersPage() {
               allowClear
             />
           </Col>
-          <Col span={5}>
+          <Col span={4}>
             <Select 
               className="w-full" 
               value={statusFilter} 
@@ -212,10 +244,11 @@ export default function OrdersPage() {
               <Option value="completed">Đã hoàn thành</Option>
             </Select>
           </Col>
-          <Col span={7}>
+          <Col span={8}>
             <RangePicker 
               className="w-full" 
-              onChange={setDateRange}
+              placeholder={['Từ ngày', 'Đến ngày']}
+              onChange={(dates) => setDateRange(dates as any)}
             />
           </Col>
           <Col span={4}>
@@ -223,12 +256,16 @@ export default function OrdersPage() {
           </Col>
         </Row>
 
+        <div className="mb-4">
+          <Tag color="blue">Đang hiển thị: {filteredData.length} / {data.length} đơn hàng</Tag>
+        </div>
+
         <Table 
           columns={columns} 
-          dataSource={data} 
+          dataSource={filteredData} 
           rowKey="id" 
           loading={loading}
-          pagination={{ pageSize: 12 }}
+          pagination={{ pageSize: 12, showSizeChanger: true, showTotal: (total) => `Tổng ${total} đơn hàng` }}
           className="custom-table"
         />
       </Card>

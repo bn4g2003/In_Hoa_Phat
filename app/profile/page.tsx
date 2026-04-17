@@ -4,22 +4,23 @@ import React, { useState, useEffect } from 'react';
 import { Card, Typography, Row, Col, Avatar, Button, Descriptions, Tag, Divider, Form, Input, message, Tabs, Space } from 'antd';
 import { UserOutlined, MailOutlined, IdcardOutlined, SafetyCertificateOutlined, LockOutlined, SaveOutlined } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
+import { getUser, setUser, getAccessibleModules } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
 
 const { Title, Text } = Typography;
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUserState] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('ppms_user');
+    const savedUser = getUser();
     if (savedUser) {
-      const u = JSON.parse(savedUser);
-      setUser(u);
+      setUserState(savedUser);
       form.setFieldsValue({
-        full_name: u.full_name,
-        username: u.username
+        full_name: savedUser.full_name,
+        username: savedUser.username
       });
     }
   }, []);
@@ -27,19 +28,23 @@ export default function ProfilePage() {
   const handleUpdate = async (values: any) => {
     setLoading(true);
     try {
+      const updates: any = { full_name: values.full_name };
+      
+      // Only update password if provided
+      if (values.password) {
+        updates.password = bcrypt.hashSync(values.password, 10);
+      }
+      
       const { error } = await supabase
         .from('users')
-        .update({ 
-          full_name: values.full_name,
-          password: values.password || user.password // Simplified for demo
-        })
+        .update(updates)
         .eq('id', user.id);
       
       if (error) throw error;
       
       const updatedUser = { ...user, full_name: values.full_name };
-      localStorage.setItem('ppms_user', JSON.stringify(updatedUser));
       setUser(updatedUser);
+      setUserState(updatedUser);
       message.success('Đã cập nhật thông tin cá nhân');
     } catch (err) {
       message.error('Lỗi khi cập nhật');
@@ -47,6 +52,8 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
+  const accessibleModules = user ? getAccessibleModules(user) : [];
 
   const tabItems = [
     {
@@ -81,9 +88,20 @@ export default function ProfilePage() {
       children: (
         <div className="mt-4">
           <Descriptions title="Chi tiết quyền hạn" bordered column={1}>
-            <Descriptions.Item label="Vai trò">{user?.roles?.name}</Descriptions.Item>
-            <Descriptions.Item label="Phân hệ truy cập">{user?.roles?.portal?.toUpperCase()}</Descriptions.Item>
-            <Descriptions.Item label="Bộ phận công tác">{user?.departments?.name}</Descriptions.Item>
+            <Descriptions.Item label="Vai trò">{user?.role?.name}</Descriptions.Item>
+            <Descriptions.Item label="Phân hệ truy cập">
+              <Tag color={user?.role?.portal === 'management' ? 'blue' : 'green'}>
+                {user?.role?.portal?.toUpperCase()}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Bộ phận công tác">{user?.department?.name}</Descriptions.Item>
+            <Descriptions.Item label="Module được truy cập">
+              <Space wrap>
+                {accessibleModules.map(m => (
+                  <Tag key={m} color="processing">{m}</Tag>
+                ))}
+              </Space>
+            </Descriptions.Item>
           </Descriptions>
         </div>
       )
@@ -100,7 +118,7 @@ export default function ProfilePage() {
           <Col>
             <Title level={1} className="m-0 text-white font-black">{user?.full_name}</Title>
             <Space className="mt-2">
-              <Tag color="blue" className="rounded-full border-none bg-white/20 text-white font-bold px-4">{user?.roles?.name?.toUpperCase()}</Tag>
+              <Tag color="blue" className="rounded-full border-none bg-white/20 text-white font-bold px-4">{user?.role?.name?.toUpperCase()}</Tag>
               <Text className="text-white/70 font-mono tracking-widest">{user?.username}</Text>
             </Space>
           </Col>

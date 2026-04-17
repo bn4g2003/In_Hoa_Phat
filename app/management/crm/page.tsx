@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Table, Input, Button, Space, Card, Typography, 
-  Row, Col, Select, message, Tag, Tooltip 
+  Row, Col, Select, message, Tag, Tooltip, DatePicker
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -21,15 +21,20 @@ import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import CustomerDetailModal from '@/components/crm/CustomerDetailModal';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 export default function CrmPage() {
   const [data, setData] = useState<any[]>([]);
+  const [filteredData, setFilteredData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [debtFilter, setDebtFilter] = useState('all');
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
@@ -49,6 +54,8 @@ export default function CrmPage() {
       if (error) throw error;
       
       let filtered = customers || [];
+      
+      // Search filter
       if (search) {
         filtered = filtered.filter(c => 
           c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -57,7 +64,25 @@ export default function CrmPage() {
         );
       }
 
-      setData(filtered);
+      // Debt filter
+      if (debtFilter === 'has_debt') {
+        filtered = filtered.filter(c => (c.current_debt || 0) > 0);
+      } else if (debtFilter === 'no_debt') {
+        filtered = filtered.filter(c => (c.current_debt || 0) === 0);
+      } else if (debtFilter === 'high_debt') {
+        filtered = filtered.filter(c => (c.current_debt || 0) > 10000000);
+      }
+
+      // Date range filter
+      if (dateRange) {
+        filtered = filtered.filter(c => {
+          const created = dayjs(c.created_at);
+          return created.isAfter(dateRange[0].startOf('day')) && created.isBefore(dateRange[1].endOf('day'));
+        });
+      }
+
+      setData(customers || []);
+      setFilteredData(filtered);
     } catch (err) {
       console.error(err);
       message.error('Lỗi khi tải danh sách khách hàng');
@@ -68,27 +93,32 @@ export default function CrmPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [categoryFilter]);
+  }, [categoryFilter, debtFilter, dateRange]);
 
+  // Export filtered data
   const exportToExcel = () => {
-    const exportData = data.map(c => ({
+    const exportData = filteredData.map(c => ({
       "Mã KH": c.code,
       "Tên": c.name,
       "SĐT": c.phone,
+      "Địa chỉ": c.address,
       "Phân loại": c.category,
       "Công nợ": c.current_debt,
-      "Tổng doanh thu": c.total_revenue
+      "Đã tạm ứng": c.prepaid_amount,
+      "Tổng doanh thu": c.total_revenue,
+      "Ngày tạo": new Date(c.created_at).toLocaleDateString('vi-VN')
     }));
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Customers");
-    XLSX.writeFile(wb, `CRM_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `CRM_KhachHang_${new Date().toISOString().split('T')[0]}.xlsx`);
+    message.success(`Đã xuất ${filteredData.length} khách hàng ra Excel`);
   };
 
   const exportToPDF = () => {
     const doc = new jsPDF() as any;
-    const tableColumn = ["Ma KH", "Ten", "SDT", "Phan loai", "No"];
-    const tableRows = data.map(c => [
+    const tableColumn = ["Ma KH", "Ten", "SDT", "Phan loai", "Cong no"];
+    const tableRows = filteredData.map(c => [
       c.code,
       c.name,
       c.phone || "",
@@ -97,8 +127,9 @@ export default function CrmPage() {
     ]);
 
     doc.autoTable(tableColumn, tableRows, { startY: 20 });
-    doc.text("DANH SACH KHACH HANG (PPMS)", 14, 15);
-    doc.save(`CRM_Export_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.text(`DANH SACH KHACH HANG - ${filteredData.length} KH`, 14, 15);
+    doc.save(`CRM_KhachHang_${new Date().toISOString().split('T')[0]}.pdf`);
+    message.success(`Đã xuất ${filteredData.length} khách hàng ra PDF`);
   };
 
   const columns = [
@@ -124,7 +155,7 @@ export default function CrmPage() {
       title: 'Phân loại',
       dataIndex: 'category',
       key: 'category',
-      render: (cat: string) => <Tag color="blue">{cat}</Tag>,
+      render: (cat: string) => <Tag color={cat === 'Khách VIP' ? 'gold' : cat === 'Đại lý' ? 'purple' : 'blue'}>{cat}</Tag>,
     },
     {
       title: 'Công nợ hiện tại',
@@ -136,6 +167,19 @@ export default function CrmPage() {
           {debt?.toLocaleString()} đ
         </Text>
       ),
+    },
+    {
+      title: 'Tổng doanh thu',
+      dataIndex: 'total_revenue',
+      key: 'revenue',
+      align: 'right' as const,
+      render: (rev: number) => <Text>{rev?.toLocaleString()} đ</Text>,
+    },
+    {
+      title: 'Ngày tạo',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
     },
     {
       title: 'Thao tác',
@@ -163,7 +207,7 @@ export default function CrmPage() {
           <Text type="secondary">Quản lý thông tin, đơn hàng và công nợ khách hàng</Text>
         </div>
         <Space size="middle">
-          <Button icon={<FileExcelOutlined />} onClick={exportToExcel}>Xuất Excel</Button>
+          <Button icon={<FileExcelOutlined />} onClick={exportToExcel}>Xuất Excel ({filteredData.length})</Button>
           <Button icon={<FilePdfOutlined />} onClick={exportToPDF}>Xuất PDF</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => { setSelectedCustomer(null); setModalVisible(true); }}>
             Thêm Khách hàng
@@ -173,7 +217,7 @@ export default function CrmPage() {
 
       <Card className="shadow-sm border-none p-2">
         <Row gutter={16} align="middle" className="mb-4">
-          <Col span={10}>
+          <Col span={8}>
             <Input 
               prefix={<SearchOutlined />} 
               placeholder="Tìm theo tên, mã KH, số điện thoại..." 
@@ -183,7 +227,7 @@ export default function CrmPage() {
               allowClear
             />
           </Col>
-          <Col span={6}>
+          <Col span={4}>
             <Select 
               className="w-full" 
               value={categoryFilter} 
@@ -197,16 +241,41 @@ export default function CrmPage() {
             </Select>
           </Col>
           <Col span={4}>
+            <Select 
+              className="w-full" 
+              value={debtFilter} 
+              onChange={setDebtFilter}
+              suffixIcon={<FilterOutlined />}
+              placeholder="Công nợ"
+            >
+              <Option value="all">Tất cả công nợ</Option>
+              <Option value="no_debt">Không nợ</Option>
+              <Option value="has_debt">Đang nợ</Option>
+              <Option value="high_debt">Nợ cao (&gt; 10tr)</Option>
+            </Select>
+          </Col>
+          <Col span={6}>
+            <RangePicker 
+              className="w-full" 
+              placeholder={['Từ ngày', 'Đến ngày']}
+              onChange={(dates) => setDateRange(dates as any)}
+            />
+          </Col>
+          <Col span={2}>
             <Button icon={<ReloadOutlined />} onClick={fetchCustomers} block>Làm mới</Button>
           </Col>
         </Row>
 
+        <div className="mb-4">
+          <Tag color="blue">Đang hiển thị: {filteredData.length} / {data.length} khách hàng</Tag>
+        </div>
+
         <Table 
           columns={columns} 
-          dataSource={data} 
+          dataSource={filteredData} 
           rowKey="id" 
           loading={loading}
-          pagination={{ pageSize: 12 }}
+          pagination={{ pageSize: 12, showSizeChanger: true, showTotal: (total) => `Tổng ${total} khách hàng` }}
           className="custom-table"
         />
       </Card>

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, Card, Typography, Row, Col, Space, Button, 
   Input, Form, Modal, InputNumber, Select, Tag, message, 
-  Tabs, Statistic, Badge, List, Alert, Empty, Segmented
+  Tabs, Statistic, Badge, Alert, Empty, Segmented
 } from 'antd';
 import { 
   DatabaseOutlined, 
@@ -18,11 +18,12 @@ import {
   SearchOutlined,
   FileExcelOutlined,
   FilePdfOutlined,
-  FileSearchOutlined
+  EyeOutlined
 } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
 import dayjs from 'dayjs';
 import A4Calculator from '@/components/warehouse/A4Calculator';
+import MaterialDetailModal from '@/components/warehouse/MaterialDetailModal';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -35,7 +36,9 @@ export default function WarehousePage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [transactionModalVisible, setTransactionModalVisible] = useState(false);
+  const [materialModalVisible, setMaterialModalVisible] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
   const [form] = Form.useForm();
   const [exportType, setExportType] = useState('import');
 
@@ -109,6 +112,11 @@ export default function WarehousePage() {
 
   const lowStockMaterials = materials.filter(m => m.stock_quantity <= m.min_stock);
 
+  const handleMaterialClick = (material: any) => {
+    setSelectedMaterial(material);
+    setMaterialModalVisible(true);
+  };
+
   const tabItems = [
     {
       key: '1',
@@ -137,6 +145,14 @@ export default function WarehousePage() {
                   ? <Tag color="red" icon={<WarningOutlined />}>BÁO ĐỘNG HẾT HÀNG</Tag> 
                   : <Tag color="green">ĐỦ HÀNG</Tag>
               )
+            },
+            {
+              title: 'Thao tác',
+              key: 'action',
+              width: 80,
+              render: (_: any, record: any) => (
+                <Button type="text" icon={<EyeOutlined />} onClick={() => handleMaterialClick(record)} />
+              ),
             }
           ]} 
           dataSource={materials} 
@@ -178,8 +194,8 @@ export default function WarehousePage() {
           <Text type="secondary">Cảnh báo tồn kho tối thiểu và liên kết cấp phát LSX</Text>
         </div>
         <Space size="middle">
-          <Button icon={<FileExcelOutlined />} onClick={() => {}} shape="round">Xuất Excel</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalVisible(true)} shape="round" className="bg-blue-600 h-10 px-6 font-bold shadow-lg">GIAO DỊCH KHO</Button>
+          <Button icon={<FileExcelOutlined />} onClick={exportMaterialsToExcel} shape="round">Xuất Excel</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setTransactionModalVisible(true)} shape="round" className="bg-blue-600 h-10 px-6 font-bold shadow-lg">GIAO DỊCH KHO</Button>
         </Space>
       </div>
 
@@ -206,6 +222,13 @@ export default function WarehousePage() {
 
       <Tabs defaultActiveKey="1" items={tabItems} className="warehouse-tabs bg-white p-6 rounded-2xl shadow-sm border border-gray-100" />
 
+      <MaterialDetailModal
+        visible={materialModalVisible}
+        material={selectedMaterial}
+        onClose={() => { setMaterialModalVisible(false); fetchData(); }}
+        onRefresh={fetchData}
+      />
+
       <Modal
         title={
           <Space className="p-2">
@@ -213,8 +236,8 @@ export default function WarehousePage() {
             <Text strong className="text-lg">Tạo giao dịch kho</Text>
           </Space>
         }
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        open={transactionModalVisible}
+        onCancel={() => setTransactionModalVisible(false)}
         footer={null}
         width={500}
         centered
@@ -254,7 +277,7 @@ export default function WarehousePage() {
             <Input.TextArea rows={2} placeholder="Nội dung diễn giải..." />
           </Form.Item>
           <div className="flex justify-end gap-3 pt-4">
-            <Button onClick={() => setModalVisible(false)} size="large">Hủy</Button>
+            <Button onClick={() => setTransactionModalVisible(false)} size="large">Hủy</Button>
             <Button type="primary" htmlType="submit" size="large" className="bg-blue-600 px-8">Xác nhận</Button>
           </div>
         </Form>
@@ -266,4 +289,24 @@ export default function WarehousePage() {
       `}</style>
     </div>
   );
+
+  function exportMaterialsToExcel() {
+    const exportData = materials.map(m => ({
+      "Vật tư": m.name,
+      "Đơn vị": m.unit,
+      "Tồn kho": m.stock_quantity,
+      "Ngưỡng tối thiểu": m.min_stock,
+      "Trạng thái": m.stock_quantity <= m.min_stock ? 'CẦN NHẬP' : 'ĐỦ'
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Materials");
+    XLSX.writeFile(wb, `Kho_TonKho_${new Date().toISOString().split('T')[0]}.xlsx`);
+    message.success(`Đã xuất ${materials.length} vật tư ra Excel`);
+  }
+}
+
+function setModalVisible(arg0: boolean) {
+  throw new Error('Function not implemented.');
 }

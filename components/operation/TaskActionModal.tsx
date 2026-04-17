@@ -4,23 +4,22 @@ import React, { useState, useEffect } from 'react';
 import { 
   Modal, Button, Space, Typography, Tag, Divider, 
   Input, Form, message, Row, Col, Tabs, Alert, Select, Checkbox, 
-  InputNumber, Statistic, Descriptions, Tooltip, Card, Popconfirm, Segmented
+  InputNumber, Statistic, Descriptions, Card, Spin
 } from 'antd';
 import { 
   CheckCircleOutlined, 
   ClockCircleOutlined, 
   DatabaseOutlined, 
-  ExclamationCircleOutlined, 
   PlayCircleOutlined, 
   SaveOutlined, 
   StopOutlined, 
-  SyncOutlined, 
   ThunderboltOutlined, 
   ToolOutlined, 
   WarningOutlined
 } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
 import dayjs from 'dayjs';
+import { getUser, User } from '@/lib/auth';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -32,13 +31,14 @@ interface TaskActionModalProps {
   onRefresh: () => void;
 }
 
-const MACHINES = [
-  { id: 'KM-01', name: 'Konica 6120', type: 'Digital' },
-  { id: 'KM-02', name: 'Konica 1085', type: 'Digital' },
-  { id: 'OS-01', name: 'Offset 4 Màu', type: 'Offset' },
-  { id: 'LP-01', name: 'Máy bế', type: 'Processing' },
-  { id: 'GL-01', name: 'Máy dán keo', type: 'Processing' },
-];
+interface Machine {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  department_id: number;
+  status: string;
+}
 
 export default function TaskActionModal({ visible, task, onClose, onRefresh }: TaskActionModalProps) {
   const [form] = Form.useForm();
@@ -48,6 +48,41 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
   const [issueMode, setIssueMode] = useState(false);
   const [wasteMode, setWasteMode] = useState(false);
   const [isShortage, setIsShortage] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [machines, setMachines] = useState<Machine[]>([]);
+  const [loadingMachines, setLoadingMachines] = useState(false);
+
+  useEffect(() => {
+    const currentUser = getUser();
+    setUser(currentUser);
+  }, []);
+
+  // Fetch machines when task changes
+  useEffect(() => {
+    if (visible && task?.department_id) {
+      fetchMachines(task.department_id);
+    }
+  }, [visible, task?.department_id]);
+
+  const fetchMachines = async (departmentId: number) => {
+    setLoadingMachines(true);
+    try {
+      const { data, error } = await supabase
+        .from('machines')
+        .select('*')
+        .eq('department_id', departmentId)
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      setMachines(data || []);
+    } catch (err) {
+      console.error('Error fetching machines:', err);
+      setMachines([]);
+    } finally {
+      setLoadingMachines(false);
+    }
+  };
 
   useEffect(() => {
     if (task) {
@@ -76,13 +111,16 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
           updates.start_time = now;
           updates.kpi_start_time = now;
         } else if (task.status === 'on_hold' && task.hold_start_time) {
-          // Resuming from hold
           const holdSecs = dayjs(now).diff(dayjs(task.hold_start_time), 'second');
           updates.total_hold_seconds = (task.total_hold_seconds || 0) + holdSecs;
-          updates.hold_start_time = null; // Reset hold start
+          updates.hold_start_time = null;
         }
       } else if (newStatus === 'on_hold') {
         updates.hold_start_time = now;
+        if (additionalData.material_shortage) {
+          updates.kpi_transferred_to = 7;
+          updates.kpi_transferred_at = now;
+        }
       } else if (newStatus === 'done') {
         updates.end_time = now;
       }
@@ -104,10 +142,15 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
 
         if (nextTask) {
           await supabase.from('tasks').update({ 
-            status: 'ready', ready_at: now, updated_at: now 
+            status: 'ready', 
+            ready_at: now, 
+            updated_at: now 
           }).eq('id', nextTask.id);
         } else {
-          await supabase.from('production_orders').update({ status: 'completed', updated_at: now }).eq('id', task.order_id);
+          await supabase.from('production_orders').update({ 
+            status: 'completed', 
+            updated_at: now 
+          }).eq('id', task.order_id);
         }
       }
 
@@ -136,13 +179,15 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
       if (shouldHold) {
         updates.status = 'on_hold';
         updates.hold_start_time = new Date().toISOString();
-        updates.issue_log = `Thiếu ${values.material_requested_qty - values.material_received_qty} vật tư.`;
+        updates.issue_log = `Thiếu ${values.material_requested_qty - values.material_received_qty} vật tư. KPI chuyển sang Kho 2.`;
+        updates.kpi_transferred_to = 7;
+        updates.kpi_transferred_at = new Date().toISOString();
       }
 
       const { error } = await supabase.from('tasks').update(updates).eq('id', task.id);
       if (error) throw error;
 
-      message.success(shouldHold ? 'Đã xác nhận HOÃN do thiếu vật tư' : 'Đã cập nhật số lượng vật tư');
+      message.success(shouldHold ? 'Đã xác nhận HOÃN HỢP LỆ - KPI chuyển sang Kho 2' : 'Đã cập nhật số lượng vật tư');
       onRefresh();
       onClose();
     } catch (err) {
@@ -152,10 +197,44 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
     }
   };
 
+  // Kho 2 releases hold and provides materials
+  const handleReleaseHold = async (values: any) => {
+    setSubmitting(true);
+    try {
+      const now = new Date().toISOString();
+      
+      const holdDuration = task.hold_start_time 
+        ? dayjs(now).diff(dayjs(task.hold_start_time), 'second')
+        : 0;
+
+      const updates: any = {
+        status: 'ready',
+        hold_start_time: null,
+        total_hold_seconds: (task.total_hold_seconds || 0) + holdDuration,
+        material_shortage: false,
+        material_received_qty: values.provided_qty,
+        issue_log: task.issue_log + ` | Đã cấp vật tư bởi Kho 2: ${values.provided_qty}`,
+        kpi_transferred_to: null,
+        kpi_transferred_at: null,
+        updated_at: now
+      };
+
+      const { error } = await supabase.from('tasks').update(updates).eq('id', task.id);
+      if (error) throw error;
+
+      message.success('Đã cấp vật tư và trả KPI về bộ phận gốc');
+      onRefresh();
+      onClose();
+    } catch (err) {
+      message.error('Lỗi khi giải quyết vật tư');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleWasteReport = async (values: any) => {
     setSubmitting(true);
     try {
-      const { data: user } = await supabase.auth.getUser();
       await supabase.from('inventory_logs').insert([{
         task_id: task.id,
         order_id: task.order_id,
@@ -176,6 +255,9 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
     }
   };
 
+  // Check if user is from Kho 2 and task has material shortage
+  const isKho2ResolvingMaterial = user?.department?.code === 'WH2' && task?.material_shortage && task?.status === 'on_hold';
+
   const tabItems = [
     {
       key: '1',
@@ -186,7 +268,13 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
             <Col span={16}>
               <Alert 
                 message={`Trạng thái: ${task?.status?.toUpperCase()}`} 
-                description={task?.status === 'on_hold' ? `Đang hoãn do: ${task.issue_log}` : "Thực hiện đúng quy trình để đảm bảo KPI."}
+                description={
+                  task?.status === 'on_hold' 
+                    ? `Đang hoãn do: ${task.issue_log}` 
+                    : task?.kpi_transferred_to 
+                      ? `KPI đã chuyển sang Kho 2 do thiếu vật tư`
+                      : "Thực hiện đúng quy trình để đảm bảo KPI."
+                }
                 type={task?.status === 'ready' ? 'info' : task?.status === 'in_progress' ? 'success' : 'warning'} 
                 showIcon 
               />
@@ -203,8 +291,24 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
             </Col>
           </Row>
           
+          {/* Kho 2 Material Resolution */}
+          {isKho2ResolvingMaterial && (
+            <Card className="bg-orange-50 border-orange-200">
+              <Title level={5}>Giải quyết thiếu hụt vật tư</Title>
+              <Text type="secondary">Bạn đang giải quyết vấn đề thiếu vật tư cho bộ phận {task?.departments?.name}</Text>
+              <Form layout="vertical" onFinish={handleReleaseHold} className="mt-4">
+                <Form.Item name="provided_qty" label="Số lượng vật tư cấp" rules={[{ required: true }]}>
+                  <InputNumber min={1} className="w-full" size="large" />
+                </Form.Item>
+                <Button type="primary" htmlType="submit" loading={submitting} block size="large">
+                  Cấp vật tư & Trả KPI về bộ phận gốc
+                </Button>
+              </Form>
+            </Card>
+          )}
+
           <div className="flex flex-wrap gap-4 justify-center py-6">
-            {(task?.status === 'ready' || task?.status === 'on_hold') && (
+            {(task?.status === 'ready' || task?.status === 'on_hold') && !isKho2ResolvingMaterial && (
               <Button 
                 type="primary" size="large" icon={<PlayCircleOutlined />} 
                 onClick={() => handleStatusChange('in_progress')}
@@ -226,13 +330,15 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
               </Button>
             )}
 
-            <Button 
-              danger size="large" icon={<WarningOutlined />} 
-              onClick={() => setIssueMode(!issueMode)}
-              className="h-16 px-10 text-lg rounded-2xl shadow-md"
-            >
-              BÁO SỰ CỐ
-            </Button>
+            {task?.status !== 'on_hold' && !isKho2ResolvingMaterial && (
+              <Button 
+                danger size="large" icon={<WarningOutlined />} 
+                onClick={() => setIssueMode(!issueMode)}
+                className="h-16 px-10 text-lg rounded-2xl shadow-md"
+              >
+                BÁO SỰ CỐ
+              </Button>
+            )}
           </div>
 
           {issueMode && (
@@ -260,8 +366,16 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
             <Row gutter={16}>
               <Col span={10}>
                 <Form.Item name="machine_id" label="Mã máy">
-                  <Select placeholder="Chọn máy">
-                    {MACHINES.map(m => <Option key={m.id} value={m.id}>{m.name} ({m.type})</Option>)}
+                  <Select placeholder="Chọn máy" loading={loadingMachines}>
+                    {machines.length > 0 ? (
+                      machines.map(m => (
+                        <Option key={m.id} value={m.code}>
+                          {m.name} ({m.type})
+                        </Option>
+                      ))
+                    ) : (
+                      <Option value="" disabled>Không có máy khả dụng</Option>
+                    )}
                   </Select>
                 </Form.Item>
               </Col>
@@ -341,14 +455,25 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
     },
     {
       key: '3',
-      label: <span><DatabaseOutlined /> Vật tư & Cấp phát</span>,
+      label: <span><DatabaseOutlined /> Vật tư & Hoãn hợp lệ</span>,
       children: (
         <div className="p-4">
           <Card className="bg-blue-50 border-blue-100 shadow-sm rounded-2xl overflow-hidden mb-6">
             <Descriptions title="Yêu cầu Cấp phát Vật tư" bordered size="small" column={1}>
               <Descriptions.Item label="Loại vật tư">{task?.production_orders?.specs?.paper_type || 'Giấy in chuẩn'}</Descriptions.Item>
               <Descriptions.Item label="Định mức hệ thống">{task?.material_requested_qty || 1000} Tờ/Cuộn</Descriptions.Item>
+              <Descriptions.Item label="Đã nhận">{task?.material_received_qty || 0} Tờ/Cuộn</Descriptions.Item>
             </Descriptions>
+            
+            {task?.material_shortage && (
+              <Alert 
+                className="mt-4"
+                message="ĐANG THIẾU VẬT TƯ - HOÃN HỢP LỆ"
+                description={`Thiếu: ${(task?.material_requested_qty || 0) - (task?.material_received_qty || 0)} đơn vị. KPI đã chuyển sang Kho 2.`}
+                type="warning"
+                showIcon
+              />
+            )}
             
             <Form 
               form={materialForm} 
@@ -369,11 +494,11 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
                 </Col>
               </Row>
 
-              {isShortage && (
+              {isShortage && task?.status !== 'on_hold' && (
                 <Alert 
                   className="mb-4"
                   message="CẢNH BÁO THIẾU HỤT"
-                  description="Nếu không thể tiếp tục sản xuất với số lượng hiện có, vui lòng chọn HOÃN HỢP LỆ để chuyển KPI sang Kho 2."
+                  description="Nếu không thể tiếp tục sản xuất với số lượng hiện có, hãy chọn HOÃN HỢP LỆ để chuyển KPI sang Kho 2."
                   type="warning"
                   showIcon
                   action={
@@ -398,7 +523,7 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
           <div>
             <div className="font-bold text-lg leading-tight">{task?.departments?.name}</div>
             <Text type="secondary" style={{ fontSize: '11px' }}>
-              #{task?.production_orders?.code} • {task?.production_orders?.title}
+              #{task?.production_orders?.code} - {task?.production_orders?.title}
             </Text>
           </div>
         </Space>

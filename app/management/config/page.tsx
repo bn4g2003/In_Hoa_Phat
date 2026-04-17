@@ -13,10 +13,14 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  UserOutlined
+  UserOutlined,
+  HistoryOutlined,
+  NodeIndexOutlined,
+  ToolOutlined
 } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
+import { useRouter } from 'next/navigation';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -29,6 +33,7 @@ export default function ConfigPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'role' | 'dept' | 'user'>('role');
   const [form] = Form.useForm();
+  const router = useRouter();
 
   const fetchData = async () => {
     setLoading(true);
@@ -126,13 +131,42 @@ export default function ConfigPage() {
                 size="small"
                 columns={[
                   { title: 'Tên bộ phận', dataIndex: 'name', key: 'name' },
-                  { title: 'Code', dataIndex: 'code', key: 'code' }
+                  { title: 'Code', dataIndex: 'code', key: 'code' },
+                  { title: 'Đầu vào', dataIndex: 'is_entry_point', key: 'entry', render: (v) => v ? <Tag color="green">Có</Tag> : <Tag>Không</Tag> }
                 ]}
                 pagination={false}
               />
             </Card>
           </Col>
         </Row>
+      )
+    },
+    {
+      key: '3',
+      label: <span><NodeIndexOutlined /> Quy trình mẫu</span>,
+      children: (
+        <Card className="shadow-sm">
+          <div className="mb-4">
+            <Text type="secondary">Quản lý các quy trình sản xuất mẫu. Truy cập trang chi tiết để thêm/sửa.</Text>
+          </div>
+          <Button type="primary" onClick={() => router.push('/management/config/workflows')}>
+            Quản lý Quy trình mẫu
+          </Button>
+        </Card>
+      )
+    },
+    {
+      key: '4',
+      label: <span><ToolOutlined /> Máy móc</span>,
+      children: (
+        <Card className="shadow-sm">
+          <div className="mb-4">
+            <Text type="secondary">Quản lý danh sách máy móc theo từng bộ phận.</Text>
+          </div>
+          <Button type="primary" onClick={() => router.push('/management/config/machines')}>
+            Quản lý Máy móc
+          </Button>
+        </Card>
       )
     }
   ];
@@ -190,6 +224,3 @@ export default function ConfigPage() {
     </div>
   );
 }
-
-// Missed import
-import { HistoryOutlined } from '@ant-design/icons';

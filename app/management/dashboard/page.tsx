@@ -17,10 +17,12 @@ import {
   ReloadOutlined,
   FilterOutlined,
   TableOutlined,
-  BarChartOutlined as GanttOutlined
+  BarChartOutlined as GanttOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
 import dayjs from 'dayjs';
+import OrderQuickViewModal from '@/components/dashboard/OrderQuickViewModal';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -46,6 +48,9 @@ export default function DashboardPage() {
     avgDelay: 0,
     completionRate: 0 
   });
+
+  const [quickViewModalVisible, setQuickViewModalVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -220,7 +225,7 @@ export default function DashboardPage() {
       width: 160,
       render: (text: string, record: any) => (
         <Space direction="vertical" size={0}>
-          <Text strong className="text-blue-600 font-mono tracking-tight">{text}</Text>
+          <Text strong className="text-blue-600 font-mono tracking-tight cursor-pointer hover:underline" onClick={() => { setSelectedOrder(record); setQuickViewModalVisible(true); }}>{text}</Text>
           <Text type="secondary" style={{ fontSize: '11px' }} ellipsis={{ tooltip: record.title }}>
             {record.title}
           </Text>
@@ -234,6 +239,15 @@ export default function DashboardPage() {
       width: 140,
       render: (_: any, record: any) => getTaskCell(record.tasks, dept.id),
     })),
+    {
+      title: 'Thao tác',
+      key: 'action',
+      fixed: 'right' as const,
+      width: 60,
+      render: (_: any, record: any) => (
+        <Button type="text" icon={<EyeOutlined />} onClick={() => { setSelectedOrder(record); setQuickViewModalVisible(true); }} />
+      ),
+    },
   ];
 
   return (
@@ -321,6 +335,13 @@ export default function DashboardPage() {
         <Space><Badge status="warning" color="#f59e0b" /><Text className="text-amber-500 text-xs font-bold font-mono">HOLD/ISSUE</Text></Space>
         <Space><Badge status="success" color="#10b981" /><Text className="text-emerald-500 text-xs font-bold font-mono">DONE</Text></Space>
       </div>
+
+      <OrderQuickViewModal
+        visible={quickViewModalVisible}
+        order={selectedOrder}
+        departments={departments}
+        onClose={() => setQuickViewModalVisible(false)}
+      />
 
       <style jsx global>{`
         .master-table .ant-table-thead > tr > th { background-color: #f8fafc !important; font-weight: 900 !important; }

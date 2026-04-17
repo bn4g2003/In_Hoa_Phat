@@ -5,6 +5,7 @@ import { Form, Input, Button, Card, Typography, message, Layout } from 'antd';
 import { UserOutlined, LockOutlined, PrinterOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
+import { setUser } from '../../lib/auth';
 import bcrypt from 'bcryptjs';
 
 const { Title, Text } = Typography;
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      // Fetch user from DB
+      // Fetch user from DB with role and department info
       const { data: user, error } = await supabase
         .from('users')
         .select(`
@@ -34,9 +35,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Check password
-      // Since user said "store directly", they might have plain text or hashed.
-      // I will check for both.
+      // Check password (support both plain text and hashed)
       let isMatch = false;
       if (values.password === user.password) {
         isMatch = true;
@@ -54,16 +53,18 @@ export default function LoginPage() {
         return;
       }
 
-      // Store user info (Mock Auth)
+      // Create session user object
       const sessionUser = {
         id: user.id,
         username: user.username,
-        fullName: user.full_name,
+        full_name: user.full_name,
         role: user.roles,
         department: user.departments,
+        department_id: user.department_id,
       };
       
-      localStorage.setItem('ppms_user', JSON.stringify(sessionUser));
+      // Use auth helper to set user
+      setUser(sessionUser);
       message.success('Đăng nhập thành công!');
 
       // Redirect based on portal
