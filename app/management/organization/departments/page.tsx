@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Card, Typography, message, Tag, Switch } from 'antd';
-import { PlusOutlined, EditOutlined, AppstoreOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Card, Typography, message, Tag, Switch, Popconfirm } from 'antd';
+import { PlusOutlined, EditOutlined, AppstoreOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
 import { clearCache } from '@/lib/auth';
 import DepartmentDetailModal from '@/components/organization/DepartmentDetailModal';
@@ -46,6 +46,22 @@ export default function DepartmentsPage() {
   const handleAddEdit = (dept: any = null) => {
     setCurrentDept(dept);
     setModalVisible(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('departments')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      clearCache();
+      message.success('Đã xóa bộ phận');
+      fetchDepartments();
+    } catch (err) {
+      console.error(err);
+      message.error('Lỗi khi xóa bộ phận');
+    }
   };
 
   const columns = [
@@ -92,7 +108,12 @@ export default function DepartmentsPage() {
       width: 80,
       align: 'right' as const,
       render: (_: any, record: any) => (
-        <Button type="text" icon={<EditOutlined />} onClick={() => handleAddEdit(record)} />
+        <Space>
+          <Button type="text" icon={<EditOutlined />} onClick={() => handleAddEdit(record)} />
+          <Popconfirm title="Xóa bộ phận này?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy">
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];

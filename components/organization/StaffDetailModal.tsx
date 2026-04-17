@@ -39,9 +39,19 @@ export default function StaffDetailModal({ visible, staff, departments, roles, o
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<any>(null);
+
+  // Lọc roles theo portal
+  const managementRoles = roles.filter(r => r.portal === 'management');
+  const operationRoles = roles.filter(r => r.portal === 'operation');
+
+  // Kiểm tra xem role đã chọn có cần bộ phận không
+  const requiresDepartment = selectedRole?.portal === 'operation';
 
   useEffect(() => {
     if (visible && staff) {
+      const role = roles.find(r => r.id === staff.role_id);
+      setSelectedRole(role);
       form.setFieldsValue({
         username: staff.username,
         full_name: staff.full_name,
@@ -52,8 +62,18 @@ export default function StaffDetailModal({ visible, staff, departments, roles, o
     } else if (visible) {
       form.resetFields();
       setTasks([]);
+      setSelectedRole(null);
     }
-  }, [visible, staff, form]);
+  }, [visible, staff, form, roles]);
+
+  const handleRoleChange = (roleId: number) => {
+    const role = roles.find(r => r.id === roleId);
+    setSelectedRole(role);
+    // Nếu chuyển sang role quản lý, clear department
+    if (role?.portal === 'management') {
+      form.setFieldValue('department_id', null);
+    }
+  };
 
   const fetchTasks = async () => {
     if (!staff) return;
@@ -85,8 +105,14 @@ export default function StaffDetailModal({ visible, staff, departments, roles, o
       const updates: any = {
         full_name: values.full_name,
         role_id: values.role_id,
-        department_id: values.department_id,
       };
+      
+      // Chỉ set department_id nếu là role operation
+      if (requiresDepartment) {
+        updates.department_id = values.department_id;
+      } else {
+        updates.department_id = null; // Clear department for management roles
+      }
       
       if (values.password) {
         updates.password = bcrypt.hashSync(values.password, 10);
@@ -215,14 +241,30 @@ export default function StaffDetailModal({ visible, staff, departments, roles, o
               </Col>
               <Col span={12}>
                 <Form.Item name="role_id" label="Vai trò" rules={[{ required: true }]}>
-                  <Select placeholder="Chọn vai trò">
-                    {roles.map(r => <Option key={r.id} value={r.id}>{r.name}</Option>)}
+                  <Select 
+                    placeholder="Chọn vai trò" 
+                    onChange={handleRoleChange}
+                    disabled={!!staff} // Không đổi role khi edit
+                  >
+                    <Option value={-1} disabled><Text type="secondary">--- Phân hệ Quản lý ---</Text></Option>
+                    {managementRoles.map(r => <Option key={r.id} value={r.id}>{r.name}</Option>)}
+                    <Option value={-2} disabled><Text type="secondary">--- Phân hệ Sản xuất ---</Text></Option>
+                    {operationRoles.map(r => <Option key={r.id} value={r.id}>{r.name}</Option>)}
                   </Select>
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="department_id" label="Bộ phận" rules={[{ required: true }]}>
-                  <Select placeholder="Chọn bộ phận">
+                <Form.Item 
+                  name="department_id" 
+                  label="Bộ phận" 
+                  rules={[{ required: requiresDepartment, message: 'Nhân viên sản xuất phải thuộc bộ phận' }]}
+                  help={!requiresDepartment ? 'Chỉ nhân viên sản xuất mới cần chọn bộ phận' : undefined}
+                >
+                  <Select 
+                    placeholder={requiresDepartment ? "Chọn bộ phận" : "Không cần chọn"}
+                    disabled={!requiresDepartment}
+                    allowClear
+                  >
                     {departments.map(d => <Option key={d.id} value={d.id}>{d.name}</Option>)}
                   </Select>
                 </Form.Item>
@@ -286,7 +328,7 @@ export default function StaffDetailModal({ visible, staff, departments, roles, o
                 <Statistic 
                   title="Tổng nhiệm vụ" 
                   value={totalTasks} 
-                  valueStyle={{ color: '#1890ff', fontWeight: 'bold' }}
+                  styles={{ content: { color: '#1890ff', fontWeight: 'bold' } }}
                 />
               </Card>
             </Col>
@@ -295,7 +337,7 @@ export default function StaffDetailModal({ visible, staff, departments, roles, o
                 <Statistic 
                   title="Hoàn thành" 
                   value={completedTasks} 
-                  valueStyle={{ color: '#52c41a', fontWeight: 'bold' }}
+                  styles={{ content: { color: '#52c41a', fontWeight: 'bold' } }}
                 />
               </Card>
             </Col>
@@ -305,7 +347,7 @@ export default function StaffDetailModal({ visible, staff, departments, roles, o
                   title="Tỷ lệ hoàn thành" 
                   value={completionRate}
                   suffix="%" 
-                  valueStyle={{ color: '#fa8c16', fontWeight: 'bold' }}
+                  styles={{ content: { color: '#fa8c16', fontWeight: 'bold' } }}
                 />
               </Card>
             </Col>
@@ -334,7 +376,7 @@ export default function StaffDetailModal({ visible, staff, departments, roles, o
       footer={null}
       width={900}
     >
-      <Tabs defaultActiveKey="1" items={tabItems} destroyInactiveTabPane />
+      <Tabs defaultActiveKey="1" items={tabItems} destroyOnHidden />
     </Modal>
   );
 }

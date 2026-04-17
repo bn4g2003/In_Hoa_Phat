@@ -227,7 +227,7 @@ export default function WorkflowDetailModal({ visible, workflow, departments, on
       footer={null}
       width={800}
     >
-      <Tabs defaultActiveKey="1" items={tabItems} destroyInactiveTabPane />
+      <Tabs defaultActiveKey="1" items={tabItems} destroyOnHidden />
     </Modal>
   );
 }

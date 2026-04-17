@@ -369,7 +369,7 @@ export default function MaterialDetailModal({ visible, material, onClose, onRefr
         footer={null}
         width={900}
       >
-        <Tabs defaultActiveKey="1" items={tabItems} destroyInactiveTabPane />
+        <Tabs defaultActiveKey="1" items={tabItems} destroyOnHidden />
       </Modal>
 
       <Modal

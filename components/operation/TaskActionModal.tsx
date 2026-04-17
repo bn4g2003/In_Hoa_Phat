@@ -535,7 +535,7 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
       centered
       className="task-modal-v2"
     >
-      <Tabs defaultActiveKey="1" items={tabItems} className="mt-4" destroyInactiveTabPane />
+      <Tabs defaultActiveKey="1" items={tabItems} className="mt-4" destroyOnHidden />
     </Modal>
   );
 }

@@ -408,7 +408,7 @@ export default function OrderDetailModal({ visible, order, onClose, onRefresh, u
         width={1000}
         centered
       >
-        <Tabs defaultActiveKey="1" items={tabItems} className="min-h-[500px]" destroyInactiveTabPane />
+        <Tabs defaultActiveKey="1" items={tabItems} className="min-h-[500px]" destroyOnHidden />
       </Modal>
 
       <Modal

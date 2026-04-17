@@ -10,6 +10,7 @@ import { getUser, hasPermission, canAccessPortal, User } from '@/lib/auth';
 const getModuleFromPath = (pathname: string): string => {
   if (pathname.includes('/tasks')) return 'tasks';
   if (pathname.includes('/warehouse')) return 'warehouse';
+  if (pathname.includes('/finance')) return 'finance';
   if (pathname.includes('/profile')) return 'profile';
   return '';
 };
@@ -35,12 +36,13 @@ export default function OperationLayout({
       }
 
       // Check portal access
+      // Redirect management users away from operation pages - they have their own pages
+      if (currentUser.role?.portal === 'management') {
+        router.push('/management/dashboard');
+        return;
+      }
+      
       if (!canAccessPortal(currentUser, 'operation')) {
-        // Redirect management users to their portal
-        if (currentUser.role?.portal === 'management') {
-          router.push('/management/dashboard');
-          return;
-        }
         setAccessDenied(true);
         return;
       }
@@ -62,7 +64,7 @@ export default function OperationLayout({
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Spin size="large" tip="Đang kiểm tra quyền truy cập..." />
+        <Spin size="large" description="Đang kiểm tra quyền truy cập..." />
       </div>
     );
   }

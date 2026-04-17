@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Table, Input, Button, Space, Card, Typography, 
-  Row, Col, Select, message, Tag, Tooltip, DatePicker
+  Row, Col, Select, message, Tag, Tooltip, DatePicker, Popconfirm
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -94,6 +94,21 @@ export default function CrmPage() {
   useEffect(() => {
     fetchCustomers();
   }, [categoryFilter, debtFilter, dateRange]);
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      message.success('Đã xóa khách hàng');
+      fetchCustomers();
+    } catch (err) {
+      console.error(err);
+      message.error('Lỗi khi xóa khách hàng. Có thể khách hàng này đang có đơn hàng.');
+    }
+  };
 
   // Export filtered data
   const exportToExcel = () => {
@@ -191,9 +206,9 @@ export default function CrmPage() {
           <Tooltip title="Xem chi tiết">
             <Button type="text" icon={<EyeOutlined />} onClick={() => { setSelectedCustomer(record); setModalVisible(true); }} />
           </Tooltip>
-          <Tooltip title="Xóa">
+          <Popconfirm title="Xóa khách hàng này?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy">
             <Button type="text" danger icon={<DeleteOutlined />} />
-          </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },

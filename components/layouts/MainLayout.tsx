@@ -16,7 +16,8 @@ import {
   AppstoreOutlined,
   SettingOutlined,
   NodeIndexOutlined,
-  ToolOutlined
+  ToolOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -71,6 +72,16 @@ export default function MainLayout({ children, portal }: MainLayoutProps) {
         items.push({ key: '/management/orders', icon: <ShoppingCartOutlined />, label: <Link href="/management/orders">Đơn hàng</Link> });
       }
       
+      // Kho - cho phép quản lý xem kho
+      if (accessibleModules.includes('warehouse')) {
+        items.push({ key: '/management/warehouse', icon: <DatabaseOutlined />, label: <Link href="/management/warehouse">Kho Vật tư</Link> });
+      }
+      
+      // Tài chính - cho phép quản lý xem tài chính
+      if (accessibleModules.includes('finance')) {
+        items.push({ key: '/management/finance', icon: <DollarOutlined />, label: <Link href="/management/finance">Tài chính</Link> });
+      }
+      
       if (accessibleModules.includes('organization')) {
         items.push({ 
           key: 'organization', 
@@ -98,6 +109,7 @@ export default function MainLayout({ children, portal }: MainLayoutProps) {
       
       return items;
     } else {
+      // Operation portal - bao gồm cả Kho và Sản xuất
       const items = [];
       
       if (accessibleModules.includes('tasks')) {
@@ -105,7 +117,12 @@ export default function MainLayout({ children, portal }: MainLayoutProps) {
       }
       
       if (accessibleModules.includes('warehouse')) {
-        items.push({ key: '/operation/warehouse', icon: <DatabaseOutlined />, label: <Link href="/operation/warehouse">Kho</Link> });
+        items.push({ key: '/operation/warehouse', icon: <DatabaseOutlined />, label: <Link href="/operation/warehouse">Kho Vật tư</Link> });
+      }
+      
+      // Thêm Tài chính cho role Kho
+      if (accessibleModules.includes('finance')) {
+        items.push({ key: '/operation/finance', icon: <DollarOutlined />, label: <Link href="/operation/finance">Tài chính</Link> });
       }
       
       return items;

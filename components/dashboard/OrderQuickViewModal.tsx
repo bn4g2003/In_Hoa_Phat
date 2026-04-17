@@ -264,7 +264,7 @@ export default function OrderQuickViewModal({ visible, order, departments, onClo
       width={800}
       centered
     >
-      <Tabs defaultActiveKey="1" items={tabItems} destroyInactiveTabPane />
+      <Tabs defaultActiveKey="1" items={tabItems} destroyOnHidden />
     </Modal>
   );
 }

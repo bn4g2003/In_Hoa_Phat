@@ -267,7 +267,7 @@ export default function MachineDetailModal({ visible, machine, departments, onCl
       footer={null}
       width={900}
     >
-      <Tabs defaultActiveKey="1" items={tabItems} destroyInactiveTabPane />
+      <Tabs defaultActiveKey="1" items={tabItems} destroyOnHidden />
     </Modal>
   );
 }

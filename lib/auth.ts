@@ -19,12 +19,12 @@ export interface User {
 
 // Role permissions mapping (static - based on business rules)
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
-  'Quản lý': ['dashboard', 'crm', 'orders', 'organization', 'config', 'profile'],
-  'Giám đốc': ['dashboard', 'crm', 'orders', 'organization', 'profile'],
-  'Kế toán': ['dashboard', 'crm', 'orders', 'profile'],
-  'Điều phối': ['dashboard', 'orders', 'profile'],
+  'Quản lý': ['dashboard', 'crm', 'orders', 'warehouse', 'finance', 'organization', 'config', 'profile'],
+  'Giám đốc': ['dashboard', 'crm', 'orders', 'warehouse', 'finance', 'organization', 'profile'],
+  'Kế toán': ['dashboard', 'crm', 'orders', 'warehouse', 'finance', 'profile'],
+  'Điều phối': ['dashboard', 'orders', 'warehouse', 'finance', 'profile'],
   'Sản xuất': ['tasks', 'profile'],
-  'Kho': ['tasks', 'warehouse', 'profile'],
+  'Kho': ['tasks', 'warehouse', 'finance', 'profile'],
 };
 
 // Cache for dynamic data

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Card, Typography, message, Tag, Avatar } from 'antd';
-import { PlusOutlined, EditOutlined, UserOutlined, TeamOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Card, Typography, message, Tag, Avatar, Popconfirm } from 'antd';
+import { PlusOutlined, EditOutlined, UserOutlined, TeamOutlined, ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
 import StaffDetailModal from '@/components/organization/StaffDetailModal';
 
@@ -54,6 +54,21 @@ export default function StaffPage() {
     setModalVisible(true);
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      message.success('Đã xóa nhân viên');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      message.error('Lỗi khi xóa nhân viên');
+    }
+  };
+
   const columns = [
     {
       title: 'Nhân viên',
@@ -92,7 +107,12 @@ export default function StaffPage() {
       width: 100,
       align: 'right' as const,
       render: (_: any, record: any) => (
-        <Button title="Xem chi tiết" type="text" icon={<EditOutlined />} onClick={() => handleAddEdit(record)} />
+        <Space>
+          <Button title="Xem/Sửa" type="text" icon={<EditOutlined />} onClick={() => handleAddEdit(record)} />
+          <Popconfirm title="Xóa nhân viên này?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy">
+            <Button title="Xóa" type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];

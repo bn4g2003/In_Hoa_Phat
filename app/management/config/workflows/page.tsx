@@ -56,6 +56,21 @@ export default function WorkflowsPage() {
     setModalVisible(true);
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('workflow_templates')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      clearCache();
+      message.success('Đã xóa quy trình');
+      fetchData();
+    } catch (err) {
+      message.error('Lỗi khi xóa quy trình');
+    }
+  };
+
   const handleToggleActive = async (id: string, isActive: boolean) => {
     try {
       const { error } = await supabase
@@ -122,7 +137,12 @@ export default function WorkflowsPage() {
       key: 'action',
       width: 80,
       render: (_: any, record: any) => (
-        <Button type="text" icon={<EditOutlined />} onClick={() => handleAddEdit(record)} />
+        <Space>
+          <Button type="text" icon={<EditOutlined />} onClick={() => handleAddEdit(record)} />
+          <Popconfirm title="Xóa quy trình này?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy">
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];

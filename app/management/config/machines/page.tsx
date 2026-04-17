@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Table, Button, Space, Card, Typography, message, Tag, Select
+  Table, Button, Space, Card, Typography, message, Tag, Select, Popconfirm
 } from 'antd';
 import { 
   ToolOutlined, 
   PlusOutlined, 
   EditOutlined, 
-  ReloadOutlined
+  ReloadOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
 import MachineDetailModal from '@/components/config/MachineDetailModal';
@@ -72,6 +73,20 @@ export default function MachinesPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('machines')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      message.success('Đã xóa máy');
+      fetchData();
+    } catch (err) {
+      message.error('Lỗi khi xóa máy');
+    }
+  };
+
   const columns = [
     {
       title: 'Mã máy',
@@ -121,7 +136,12 @@ export default function MachinesPage() {
       key: 'action',
       width: 80,
       render: (_: any, record: any) => (
-        <Button type="text" icon={<EditOutlined />} onClick={() => handleAddEdit(record)} />
+        <Space>
+          <Button type="text" icon={<EditOutlined />} onClick={() => handleAddEdit(record)} />
+          <Popconfirm title="Xóa máy này?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy">
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];

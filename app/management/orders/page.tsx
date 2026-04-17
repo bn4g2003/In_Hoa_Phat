@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Table, Input, Button, Space, Tag, Card, Typography, 
-  Row, Col, Select, message, Tooltip, Progress, DatePicker
+  Row, Col, Select, message, Tooltip, Progress, DatePicker, Popconfirm
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -15,7 +15,8 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   WarningOutlined,
-  FilterOutlined
+  FilterOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
@@ -91,6 +92,21 @@ export default function OrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, [statusFilter, dateRange]);
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('production_orders')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      message.success('Đã xóa đơn hàng');
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+      message.error('Lỗi khi xóa đơn hàng');
+    }
+  };
 
   // Export filtered data
   const exportToExcel = () => {
@@ -192,13 +208,18 @@ export default function OrdersPage() {
       fixed: 'right' as const,
       width: 100,
       render: (_: any, record: any) => (
-        <Tooltip title="Xem chi tiết">
-          <Button 
-            type="text" 
-            icon={<EyeOutlined />} 
-            onClick={() => { setSelectedOrder(record); setDetailModalVisible(true); }} 
-          />
-        </Tooltip>
+        <Space>
+          <Tooltip title="Xem chi tiết">
+            <Button 
+              type="text" 
+              icon={<EyeOutlined />} 
+              onClick={() => { setSelectedOrder(record); setDetailModalVisible(true); }} 
+            />
+          </Tooltip>
+          <Popconfirm title="Xóa đơn hàng này?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy">
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];

@@ -123,6 +123,47 @@ export default function DepartmentDetailModal({ visible, department, onClose, on
   const handleDelete = async () => {
     setDeleting(true);
     try {
+      // Kiểm tra xem có nhân viên nào thuộc bộ phận không
+      const { data: staffCount } = await supabase
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .eq('department_id', department.id);
+      
+      // Kiểm tra xem có máy móc nào thuộc bộ phận không
+      const { data: machineCount } = await supabase
+        .from('machines')
+        .select('id', { count: 'exact', head: true })
+        .eq('department_id', department.id);
+      
+      // Kiểm tra xem có task nào thuộc bộ phận không
+      const { data: taskCount } = await supabase
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('department_id', department.id);
+
+      // Kiểm tra workflow templates có tham chiếu không
+      const { data: workflows } = await supabase
+        .from('workflow_templates')
+        .select('department_sequence')
+        .contains('department_sequence', [department.id]);
+
+      const staffLen = staffCount?.length || 0;
+      const machineLen = machineCount?.length || 0;
+      const taskLen = taskCount?.length || 0;
+      const workflowLen = workflows?.length || 0;
+
+      if (staffLen > 0 || machineLen > 0 || taskLen > 0 || workflowLen > 0) {
+        let msg = 'Không thể xóa bộ phận này vì đang có: ';
+        const issues = [];
+        if (staffLen > 0) issues.push(`${staffLen} nhân viên`);
+        if (machineLen > 0) issues.push(`${machineLen} máy móc`);
+        if (taskLen > 0) issues.push(`${taskLen} task`);
+        if (workflowLen > 0) issues.push(`${workflowLen} quy trình mẫu`);
+        message.error(msg + issues.join(', '));
+        setDeleting(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('departments')
         .delete()
@@ -132,7 +173,8 @@ export default function DepartmentDetailModal({ visible, department, onClose, on
       onRefresh?.();
       onClose();
     } catch (err) {
-      message.error('Lỗi khi xóa bộ phận. Có thể bộ phận này đang có nhân viên.');
+      console.error(err);
+      message.error('Lỗi khi xóa bộ phận');
     } finally {
       setDeleting(false);
     }
@@ -268,7 +310,7 @@ export default function DepartmentDetailModal({ visible, department, onClose, on
           <Row gutter={16} className="mb-4">
             <Col span={8}>
               <Card size="small" className="bg-blue-50 border-blue-100 text-center">
-                <Statistic title="Tổng nhân viên" value={staff.length} valueStyle={{ fontWeight: 'bold' }} />
+                <Statistic title="Tổng nhân viên" value={staff.length} styles={{ content: { fontWeight: 'bold' } }} />
               </Card>
             </Col>
             <Col span={8}>
@@ -334,7 +376,7 @@ export default function DepartmentDetailModal({ visible, department, onClose, on
       footer={null}
       width={900}
     >
-      <Tabs defaultActiveKey="1" items={tabItems} destroyInactiveTabPane />
+      <Tabs defaultActiveKey="1" items={tabItems} destroyOnHidden />
     </Modal>
   );
 }
