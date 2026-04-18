@@ -153,66 +153,81 @@ export default function OrdersPage() {
       title: 'Mã Đơn',
       dataIndex: 'code',
       key: 'code',
-      render: (text: string) => <Text strong className="text-blue-600">{text}</Text>,
+      onCell: () => ({ 'data-label': 'Mã Đơn' } as any),
+      render: (text: string) => <Text strong className="text-blue-600 font-mono tracking-tighter">{text}</Text>,
     },
     {
       title: 'Khách hàng',
       dataIndex: ['customers', 'name'],
       key: 'customer',
-      render: (name: string) => <Text>{name}</Text>,
+      onCell: () => ({ 'data-label': 'Khách hàng' } as any),
+      render: (name: string) => <Text className="font-bold text-slate-800 leading-tight">{name}</Text>,
     },
     {
       title: 'Nội dung in',
       dataIndex: 'title',
       key: 'title',
       ellipsis: true,
+      onCell: () => ({ 'data-label': 'Nội dung' } as any),
     },
     {
       title: 'Số lượng',
       key: 'quantity',
-      render: (record: any) => `${record.specs?.quantity?.toLocaleString()} ${record.specs?.unit}`,
+      onCell: () => ({ 'data-label': 'Số lượng' } as any),
+      render: (record: any) => (
+        <span className="font-bold text-slate-600">
+          {record.specs?.quantity?.toLocaleString()} <span className="text-[10px] text-slate-400 uppercase">{record.specs?.unit}</span>
+        </span>
+      ),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      onCell: () => ({ 'data-label': 'Tình trạng' } as any),
       render: (status: string) => {
-        let color = status === 'completed' ? 'green' : status === 'in_progress' ? 'blue' : 'orange';
-        let icon = status === 'completed' ? <CheckCircleOutlined /> : status === 'in_progress' ? <ClockCircleOutlined /> : <WarningOutlined />;
-        return <Tag color={color} icon={icon}>{status.toUpperCase()}</Tag>;
+        const configs: any = {
+          completed: { color: 'emerald', icon: <CheckCircleOutlined />, label: 'HOÀN TẤT' },
+          in_progress: { color: 'blue', icon: <ClockCircleOutlined />, label: 'PRODUCTION' },
+          pending: { color: 'amber', icon: <WarningOutlined />, label: 'CHỜ XỬ LÝ' }
+        };
+        const cfg = configs[status] || { color: 'slate', icon: <ClockCircleOutlined />, label: status.toUpperCase() };
+        return <Tag color={cfg.color} icon={cfg.icon} className="rounded-lg border-none font-bold px-3 py-0.5">{cfg.label}</Tag>;
       },
     },
     {
-      title: 'Tiền thu',
+      title: 'Thanh toán',
       key: 'financials',
+      width: 150,
+      onCell: () => ({ 'data-label': 'Thu tiền' } as any),
       render: (record: any) => {
         const received = record.financials?.received || 0;
         const total = record.financials?.total_with_vat || 0;
         const percent = total > 0 ? Math.round((received / total) * 100) : 0;
         return (
-          <Tooltip title={`${received.toLocaleString()} / ${total.toLocaleString()} đ`}>
-            <Progress percent={percent} size="small" status={percent === 100 ? 'success' : 'active'} />
-          </Tooltip>
+          <div className="w-full min-w-[100px]">
+            <Progress 
+              percent={percent} 
+              size="small" 
+              strokeColor={percent === 100 ? '#10b981' : '#6366f1'} 
+              format={p => <span className="text-[10px] font-bold text-slate-500">{p}%</span>}
+            />
+          </div>
         );
       },
-    },
-    {
-      title: 'Ngày tạo',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
     },
     {
       title: 'Thao tác',
       key: 'action',
       fixed: 'right' as const,
       width: 100,
+      onCell: () => ({ 'data-label': 'Thao tác' } as any),
       render: (_: any, record: any) => (
         <Space>
           <Tooltip title="Xem chi tiết">
             <Button 
               type="text" 
-              icon={<EyeOutlined />} 
+              icon={<EyeOutlined className="text-slate-400" />} 
               onClick={() => { setSelectedOrder(record); setDetailModalVisible(true); }} 
             />
           </Tooltip>
@@ -225,25 +240,25 @@ export default function OrdersPage() {
   ];
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto animate-in">
-      <div className="flex justify-between items-end">
+    <div className="space-y-8 max-w-[1600px] mx-auto animate-in px-4 sm:px-0 pb-10">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <Title level={2} className="m-0 font-black tracking-tight text-slate-900">
-            MASTER <span className="text-indigo-600">ORDERS</span>
+          <Title level={2} className="m-0 font-black tracking-tight text-slate-900 leading-tight">
+            MASTER <span className="text-indigo-600 uppercase">ORDERS</span>
           </Title>
           <div className="flex items-center gap-2 mt-2">
             <div className="h-1 w-8 bg-indigo-600 rounded-full" />
             <Text className="premium-label text-slate-400">Điều hành sản xuất • Quản lý tiến độ & Tài chính</Text>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button icon={<FileExcelOutlined />} onClick={exportToExcel} className="h-12 px-6 rounded-2xl font-bold border-slate-200">XUẤT EXCEL</Button>
-          <Button icon={<FilePdfOutlined />} onClick={exportToPDF} className="h-12 px-6 rounded-2xl font-bold border-slate-200">XUẤT PDF</Button>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <Button icon={<FileExcelOutlined />} onClick={exportToExcel} className="h-12 flex-1 sm:flex-none px-6 rounded-2xl font-bold border-slate-200">EXCEL</Button>
+          <Button icon={<FilePdfOutlined />} onClick={exportToPDF} className="h-12 flex-1 sm:flex-none px-6 rounded-2xl font-bold border-slate-200">PDF</Button>
           <Button 
             type="primary" 
             icon={<PlusOutlined />} 
             onClick={() => setCreateModalVisible(true)}
-            className="h-12 px-8 rounded-2xl font-bold shadow-indigo-200 shadow-lg"
+            className="h-12 w-full sm:w-auto px-8 rounded-2xl font-bold bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 shadow-lg border-none"
           >
             LÊN LỆNH MỚI
           </Button>
@@ -251,7 +266,7 @@ export default function OrdersPage() {
       </div>
 
       <div className="glass-card p-4 rounded-[28px] grid grid-cols-12 gap-4 items-center">
-        <div className="col-span-4">
+        <div className="col-span-12 lg:col-span-4">
           <Input 
             prefix={<SearchOutlined className="text-slate-400" />} 
             placeholder="Mã đơn, khách hàng, nội dung..." 
@@ -262,7 +277,7 @@ export default function OrdersPage() {
             allowClear
           />
         </div>
-        <div className="col-span-3">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
           <Select 
             className="w-full premium-select" 
             value={statusFilter} 
@@ -274,33 +289,38 @@ export default function OrdersPage() {
             <Option value="completed">ĐÃ HOÀN THÀNH</Option>
           </Select>
         </div>
-        <div className="col-span-3">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
           <RangePicker 
             className="w-full premium-datepicker" 
             placeholder={['Từ ngày', 'Đến ngày']}
             onChange={(dates) => setDateRange(dates as any)}
           />
         </div>
-        <div className="col-span-2">
-          <Button icon={<ReloadOutlined />} onClick={fetchOrders} className="h-11 w-full rounded-xl border-slate-200 font-bold" block>LÀM MỚI</Button>
+        <div className="col-span-12 sm:col-span-12 lg:col-span-2">
+          <Button 
+            icon={<ReloadOutlined />} 
+            onClick={fetchOrders} 
+            className="h-11 w-full rounded-xl border-slate-200 font-bold flex items-center justify-center bg-white" 
+          >
+            LÀM MỚI
+          </Button>
         </div>
       </div>
 
-      <div className="premium-shadow rounded-[32px] overflow-hidden bg-white">
+      <div className="premium-shadow rounded-[32px] overflow-hidden bg-white border border-slate-100">
         <Table 
+          sticky={{ offsetHeader: 72 }}
           columns={columns} 
           dataSource={filteredData} 
           rowKey="id" 
           loading={loading}
-          pagination={{ pageSize: 12, placement: 'bottomCenter' }}
+          pagination={{ pageSize: 12, position: ['bottomCenter'] } as any}
           className="designer-table"
-          scroll={{ x: 'max-content' }}
         />
       </div>
 
       <CreateOrderModal visible={createModalVisible} onClose={() => { setCreateModalVisible(false); fetchOrders(); }} />
       <OrderDetailModal visible={detailModalVisible} order={selectedOrder} onClose={() => setDetailModalVisible(false)} />
-
     </div>
   );
 }

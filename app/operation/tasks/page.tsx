@@ -125,10 +125,11 @@ export default function TasksPage() {
     {
       title: 'Lệnh Sản Xuất',
       key: 'order',
+      onCell: () => ({ 'data-label': 'Lệnh in' } as any),
       render: (_: any, record: any) => (
-        <Space direction="vertical" size={0}>
-          <Text strong>{record.production_orders?.code}</Text>
-          <Text type="secondary" style={{ fontSize: '12px' }}>{record.production_orders?.title}</Text>
+        <Space direction="vertical" size={0} className="text-left">
+          <Text strong className="text-blue-600 font-mono tracking-tighter">{record.production_orders?.code}</Text>
+          <Text className="text-[11px] text-slate-400 font-bold uppercase truncate max-w-[200px]">{record.production_orders?.title}</Text>
         </Space>
       ),
     },
@@ -136,19 +137,21 @@ export default function TasksPage() {
       title: 'Bộ phận',
       dataIndex: ['departments', 'name'],
       key: 'dept',
+      onCell: () => ({ 'data-label': 'Bộ phận' } as any),
       render: (name: string, record: any) => (
-        <Space>
-          <Tag color={record.department_id === user.department_id ? 'blue' : 'orange'}>
+        <div className="flex flex-col gap-1 items-end sm:items-start text-right sm:text-left">
+          <Tag color={record.department_id === user.department_id ? 'blue' : 'orange'} className="rounded-lg border-none font-bold px-3 py-0.5 m-0 uppercase text-[10px]">
             {name}
           </Tag>
-          {record.material_shortage && <Tag color="red">Thiếu vật tư</Tag>}
-        </Space>
+          {record.material_shortage && <Tag color="red" className="rounded-lg border-none font-bold px-2 py-0.5 m-0 text-[9px] animate-pulse">THIẾU VẬT TƯ</Tag>}
+        </div>
       )
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      onCell: () => ({ 'data-label': 'Tình trạng' } as any),
       render: (status: string) => {
         const configs: any = {
           ready: { color: 'cyan', icon: <ThunderboltOutlined />, label: 'SẴN SÀNG' },
@@ -159,7 +162,7 @@ export default function TasksPage() {
         };
         const cfg = configs[status] || { color: 'slate', icon: <ClockCircleOutlined />, label: status.toUpperCase() };
         return (
-          <Tag color={cfg.color} icon={cfg.icon} className="rounded-lg border-none font-bold px-3 py-1 flex items-center w-fit gap-1">
+          <Tag color={cfg.color} icon={cfg.icon} className="rounded-lg border-none font-bold px-3 py-1 flex items-center w-fit gap-1 text-[10px]">
             {cfg.label}
           </Tag>
         );
@@ -169,19 +172,21 @@ export default function TasksPage() {
       title: 'Cập nhật',
       dataIndex: 'updated_at',
       key: 'updated_at',
-      render: (date: string) => <Text className="text-slate-500 font-medium">{new Date(date).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</Text>,
+      onCell: () => ({ 'data-label': 'Cập nhật' } as any),
+      render: (date: string) => <Text className="text-slate-400 font-bold text-[11px] font-mono">{new Date(date).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</Text>,
     },
     {
       title: 'Thao tác',
       key: 'action',
       fixed: 'right' as const,
       width: 140,
+      onCell: () => ({ 'data-label': 'Thao tác' } as any),
       render: (_: any, record: any) => (
         <Button 
           type="primary" 
           icon={<EyeOutlined />} 
           onClick={() => { setSelectedTask(record); setActionModalVisible(true); }}
-          className={`font-bold rounded-xl border-none shadow-sm ${record.department_id === user.department_id ? 'bg-indigo-600' : 'bg-rose-600'}`}
+          className={`font-black rounded-xl border-none shadow-lg h-10 w-full sm:w-auto px-6 ${record.department_id === user.department_id ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100' : 'bg-rose-600 hover:bg-rose-700 shadow-rose-100'}`}
         >
           {record.department_id === user.department_id ? 'XỬ LÝ' : 'VẬT TƯ'}
         </Button>
@@ -196,10 +201,10 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto animate-in">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto animate-in px-4 sm:px-0 pb-10">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <Title level={2} className="m-0 font-black tracking-tight text-slate-900">
+          <Title level={2} className="m-0 font-black tracking-tighter text-slate-900 leading-tight">
             PRODUCTION <span className="text-indigo-600">TASKS</span>
           </Title>
           <div className="flex items-center gap-2 mt-2">
@@ -209,36 +214,36 @@ export default function TasksPage() {
             </Text>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button icon={<FileExcelOutlined />} onClick={exportToExcel} className="h-12 px-6 rounded-2xl font-bold border-slate-200">EXCEL</Button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Button icon={<FileExcelOutlined />} onClick={exportToExcel} className="h-12 flex-1 sm:flex-none px-6 rounded-2xl font-bold border-slate-200">EXCEL</Button>
           <Button icon={<ReloadOutlined />} onClick={fetchTasks} loading={loading} className="h-12 w-12 flex items-center justify-center rounded-2xl border-slate-200" />
         </div>
       </div>
 
-      <Row gutter={[24, 24]}>
+      <Row gutter={[16, 16]}>
         {[
           { title: "SẴN SÀNG", value: stats.ready, icon: <ThunderboltOutlined />, color: "cyan" },
           { title: "ĐANG LÀM", value: stats.active, icon: <ReloadOutlined />, color: "blue", spin: true },
-          { title: "SỰ CỐ / THIẾU VT", value: stats.issues, icon: <WarningOutlined />, color: "rose", highlight: stats.issues > 0 }
+          { title: "SỰ CỐ", value: stats.issues, icon: <WarningOutlined />, color: "rose", highlight: stats.issues > 0 }
         ].map((stat, idx) => (
-          <Col span={8} key={idx}>
-            <div className={`ui-surface p-6 flex items-center justify-between border-none ${stat.highlight ? 'animate-pulse-subtle border-l-4 border-rose-500 shadow-rose-100 shadow-lg' : ''}`}>
+          <Col xs={24} sm={8} key={idx}>
+            <div className={`ui-surface p-5 sm:p-6 flex items-center justify-between border-none ${stat.highlight ? 'animate-pulse-subtle border-l-4 border-rose-500 shadow-rose-100 shadow-lg' : ''}`}>
               <div className="flex flex-col">
                 <Text className="premium-label mb-1 uppercase whitespace-nowrap">{stat.title}</Text>
-                <span className={`text-4xl font-black tracking-tighter ${stat.highlight ? 'text-rose-600' : 'text-slate-900'} leading-none`}>
+                <span className={`text-3xl sm:text-4xl font-black tracking-tighter ${stat.highlight ? 'text-rose-600' : 'text-slate-900'} leading-none`}>
                   {stat.value}
                 </span>
               </div>
               <div className={`p-4 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600 text-2xl shadow-sm border border-${stat.color}-100 flex items-center justify-center`}>
-                {React.cloneElement(stat.icon as React.ReactElement, { spin: stat.spin })}
+                {React.cloneElement(stat.icon as React.ReactElement<any>, { spin: stat.spin })}
               </div>
             </div>
           </Col>
         ))}
       </Row>
 
-      <div className="glass-card p-4 rounded-[28px] grid grid-cols-12 gap-4 items-center">
-        <div className="col-span-8">
+      <div className="glass-card p-4 rounded-[28px] flex flex-col lg:flex-row gap-4 items-center">
+        <div className="w-full lg:flex-1">
           <Input 
             prefix={<SearchOutlined className="text-slate-400" />} 
             placeholder="Tìm theo mã lệnh, nội dung in..." 
@@ -249,7 +254,7 @@ export default function TasksPage() {
             allowClear
           />
         </div>
-        <div className="col-span-4">
+        <div className="w-full lg:w-64">
           <Select 
             className="w-full premium-select" 
             value={statusFilter} 
@@ -265,16 +270,16 @@ export default function TasksPage() {
         </div>
       </div>
 
-      <div className="premium-shadow rounded-[32px] overflow-hidden bg-white">
+      <div className="premium-shadow rounded-[32px] overflow-hidden bg-white border border-slate-100">
         <Table 
+          sticky={{ offsetHeader: 72 }}
           columns={columns} 
           dataSource={data} 
           rowKey="id" 
           loading={loading}
-          pagination={{ pageSize: 12, placement: 'bottomCenter' }}
+          pagination={{ pageSize: 12, position: ['bottomCenter'] } as any}
           className="designer-table"
-          locale={{ emptyText: <Empty description="Không có nhiệm vụ nào cần xử lý" /> }}
-          scroll={{ x: 'max-content' }}
+          locale={{ emptyText: <Empty description="Hiện không có nhiệm vụ nào" /> }}
         />
       </div>
 

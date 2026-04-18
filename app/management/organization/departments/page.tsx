@@ -70,29 +70,34 @@ export default function DepartmentsPage() {
       dataIndex: 'id',
       key: 'id',
       width: 60,
+      onCell: () => ({ 'data-label': 'ID' } as any),
     },
     {
       title: 'Mã bộ phận',
       dataIndex: 'code',
       key: 'code',
+      onCell: () => ({ 'data-label': 'Mã' } as any),
       render: (text: string) => <Tag color="blue">{text}</Tag>,
     },
     {
       title: 'Tên bộ phận',
       dataIndex: 'name',
       key: 'name',
+      onCell: () => ({ 'data-label': 'Tên bộ phận' } as any),
       render: (text: string) => <Text strong>{text}</Text>,
     },
     {
       title: 'Đầu vào',
       dataIndex: 'is_entry_point',
       key: 'is_entry_point',
+      onCell: () => ({ 'data-label': 'Loại' } as any),
       render: (v: boolean) => v ? <Tag color="green" className="rounded-lg border-none font-bold px-3 py-0.5 uppercase text-[10px]">TIẾP NHẬN LSX</Tag> : <Tag className="rounded-lg border-none font-bold px-3 py-0.5 uppercase text-[10px]">NỘI BỘ</Tag>,
     },
     {
       title: 'Quyền hạn',
       dataIndex: 'permissions',
       key: 'permissions',
+      onCell: () => ({ 'data-label': 'Quyền hạn' } as any),
       render: (perms: string[]) => (
         <Space size={2} wrap>
           {perms?.length > 0 ? perms.map(p => {
@@ -105,6 +110,7 @@ export default function DepartmentsPage() {
     {
       title: 'Trạng thái',
       key: 'status',
+      onCell: () => ({ 'data-label': 'Trạng thái' } as any),
       render: () => <Badge status="processing" text={<Text className="text-[10px] font-bold text-blue-500 uppercase">ĐANG VẬN HÀNH</Text>} />,
     },
     {
@@ -112,6 +118,7 @@ export default function DepartmentsPage() {
       key: 'action',
       width: 100,
       align: 'right' as const,
+      onCell: () => ({ 'data-label': 'Thao tác' } as any),
       render: (_: any, record: any) => (
         <Space>
           <Button type="text" icon={<EditOutlined className="text-slate-400" />} onClick={() => handleAddEdit(record)} />
@@ -150,6 +157,7 @@ export default function DepartmentsPage() {
 
       <div className="premium-shadow rounded-[32px] overflow-hidden bg-white border border-slate-100">
         <Table 
+          sticky={{ offsetHeader: 72 }}
           columns={columns} 
           dataSource={data} 
           rowKey="id" 

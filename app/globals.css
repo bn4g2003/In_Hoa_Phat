@@ -146,6 +146,7 @@ h1, h2, h3, h4, h5, h6, .ant-typography-title, strong, b, .font-black, .font-bol
   background: #cbd5e1;
 }
 
+
 /* High-end Animations */
 @keyframes fadeInSlideUp {
   from { opacity: 0; transform: translateY(12px); }
@@ -163,4 +164,82 @@ h1, h2, h3, h4, h5, h6, .ant-typography-title, strong, b, .font-black, .font-bol
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+/* --- ADVANCED RESPONSIVE SYSTEM --- */
+
+/* Mobile Table-to-Card Transformation */
+@media (max-width: 768px) {
+  .designer-table .ant-table-thead {
+    display: none !important;
+  }
+  
+  .designer-table .ant-table-tbody > tr {
+    display: block !important;
+    margin-bottom: 20px !important;
+    background: #ffffff !important;
+    border-radius: 20px !important;
+    border: 1px solid #f1f5f9 !important;
+    padding: 12px !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03) !important;
+  }
+  
+  .designer-table .ant-table-tbody > tr > td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border: none !important;
+    padding: 10px 12px !important;
+    text-align: right !important;
+    font-size: 13px !important;
+  }
+
+  .designer-table .ant-table-tbody > tr > td::before {
+    content: attr(data-label);
+    float: left;
+    font-weight: 700;
+    color: #94a3b8;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .designer-table .ant-table-tbody > tr > td:last-child {
+    border-top: 1px solid #f8fafc !important;
+    margin-top: 10px;
+    padding-top: 15px !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+}
+
+/* Glass Filter Responsive Adjustment */
+@media (max-width: 1024px) {
+  .glass-card {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    padding: 16px !important;
+    border-radius: 20px !important;
+  }
+  
+  .glass-card > div {
+    grid-column: span 12 / span 12 !important;
+    width: 100% !important;
+  }
+}
+
+/* AntD Sticky Header Offset */
+.ant-table-sticky-header {
+  top: 72px !important;
+  z-index: 10 !important;
+}
+
+@media (max-width: 640px) {
+  .animate-in {
+    padding: 12px !important;
+    margin: 12px !important;
+  }
+  .max-w-\[1600px\] {
+    margin: 0 !important;
+  }
 }

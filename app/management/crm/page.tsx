@@ -151,12 +151,15 @@ export default function CrmPage() {
     {
       title: 'Khách hàng',
       key: 'customer',
+      onCell: () => ({ 'data-label': 'Khách hàng' } as any),
       render: (_: any, record: any) => (
         <Space>
-          <UserOutlined className="text-blue-500" />
-          <div>
-            <div className="font-medium">{record.name}</div>
-            <div className="text-xs text-gray-400">{record.code}</div>
+          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <UserOutlined />
+          </div>
+          <div className="text-left">
+            <div className="font-bold text-slate-800 leading-tight">{record.name}</div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{record.code}</div>
           </div>
         </Space>
       ),
@@ -165,22 +168,30 @@ export default function CrmPage() {
       title: 'Số điện thoại',
       dataIndex: 'phone',
       key: 'phone',
+      onCell: () => ({ 'data-label': 'SĐT' } as any),
+      render: (text: string) => <Text className="font-mono text-slate-600 font-medium">{text || '---'}</Text>
     },
     {
       title: 'Phân loại',
       dataIndex: 'category',
       key: 'category',
-      render: (cat: string) => <Tag color={cat === 'Khách VIP' ? 'gold' : cat === 'Đại lý' ? 'purple' : 'blue'}>{cat}</Tag>,
+      onCell: () => ({ 'data-label': 'Loại' } as any),
+      render: (cat: string) => (
+        <Tag color={cat === 'Khách VIP' ? 'gold' : cat === 'Đại lý' ? 'purple' : 'blue'} className="rounded-lg border-none font-bold px-3 py-0.5">
+          {cat?.toUpperCase() || 'KHÁCH LẺ'}
+        </Tag>
+      ),
     },
     {
-      title: 'Công nợ hiện tại',
+      title: 'Công nợ',
       dataIndex: 'current_debt',
       key: 'debt',
       align: 'right' as const,
+      onCell: () => ({ 'data-label': 'Công nợ' } as any),
       render: (debt: number) => (
-        <Text type={debt > 0 ? 'danger' : 'success'} strong>
+        <span className={`font-black tracking-tight ${debt > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
           {debt?.toLocaleString()} đ
-        </Text>
+        </span>
       ),
     },
     {
@@ -188,23 +199,26 @@ export default function CrmPage() {
       dataIndex: 'total_revenue',
       key: 'revenue',
       align: 'right' as const,
-      render: (rev: number) => <Text>{rev?.toLocaleString()} đ</Text>,
+      onCell: () => ({ 'data-label': 'Doanh thu' } as any),
+      render: (rev: number) => <Text className="font-bold text-slate-600">{rev?.toLocaleString()} đ</Text>,
     },
     {
       title: 'Ngày tạo',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
+      onCell: () => ({ 'data-label': 'Ngày tạo' } as any),
+      render: (date: string) => <Text className="text-slate-400 font-medium">{new Date(date).toLocaleDateString('vi-VN')}</Text>,
     },
     {
       title: 'Thao tác',
       key: 'action',
       width: 120,
       fixed: 'right' as const,
+      onCell: () => ({ 'data-label': 'Thao tác' } as any),
       render: (_: any, record: any) => (
         <Space>
           <Tooltip title="Xem chi tiết">
-            <Button type="text" icon={<EyeOutlined />} onClick={() => { setSelectedCustomer(record); setModalVisible(true); }} />
+            <Button type="text" icon={<EyeOutlined className="text-slate-400" />} onClick={() => { setSelectedCustomer(record); setModalVisible(true); }} />
           </Tooltip>
           <Popconfirm title="Xóa khách hàng này?" onConfirm={() => handleDelete(record.id)} okText="Xóa" cancelText="Hủy">
             <Button type="text" danger icon={<DeleteOutlined />} />
@@ -215,25 +229,25 @@ export default function CrmPage() {
   ];
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto animate-in">
-      <div className="flex justify-between items-end">
+    <div className="space-y-8 max-w-[1600px] mx-auto animate-in px-4 sm:px-0 pb-10">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <Title level={2} className="m-0 font-black tracking-tight text-slate-900">
-            MASTER <span className="text-indigo-600">CRM</span>
+          <Title level={2} className="m-0 font-black tracking-tight text-slate-900 leading-tight">
+            MASTER <span className="text-indigo-600 uppercase">CRM</span>
           </Title>
           <div className="flex items-center gap-2 mt-2">
             <div className="h-1 w-8 bg-indigo-600 rounded-full" />
             <Text className="premium-label text-slate-400">Quản lý đối tác • Phân tích công nợ & doanh thu</Text>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button icon={<FileExcelOutlined />} onClick={exportToExcel} className="h-12 px-6 rounded-2xl font-bold border-slate-200">XUẤT EXCEL</Button>
-          <Button icon={<FilePdfOutlined />} onClick={exportToPDF} className="h-12 px-6 rounded-2xl font-bold border-slate-200">XUẤT PDF</Button>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <Button icon={<FileExcelOutlined />} onClick={exportToExcel} className="h-12 flex-1 sm:flex-none px-6 rounded-2xl font-bold border-slate-200">EXCEL</Button>
+          <Button icon={<FilePdfOutlined />} onClick={exportToPDF} className="h-12 flex-1 sm:flex-none px-6 rounded-2xl font-bold border-slate-200">PDF</Button>
           <Button 
             type="primary" 
             icon={<PlusOutlined />} 
             onClick={() => { setSelectedCustomer(null); setModalVisible(true); }}
-            className="h-12 px-8 rounded-2xl font-bold shadow-indigo-200 shadow-lg"
+            className="h-12 w-full sm:w-auto px-8 rounded-2xl font-bold bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 shadow-lg border-none"
           >
             THÊM KHÁCH HÀNG
           </Button>
@@ -241,7 +255,7 @@ export default function CrmPage() {
       </div>
 
       <div className="glass-card p-4 rounded-[28px] grid grid-cols-12 gap-4 items-center">
-        <div className="col-span-4">
+        <div className="col-span-12 lg:col-span-4">
           <Input 
             prefix={<SearchOutlined className="text-slate-400" />} 
             placeholder="Tìm theo tên, mã KH, số điện thoại..." 
@@ -252,7 +266,7 @@ export default function CrmPage() {
             allowClear
           />
         </div>
-        <div className="col-span-2">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-2">
           <Select 
             className="w-full premium-select" 
             value={categoryFilter} 
@@ -264,7 +278,7 @@ export default function CrmPage() {
             <Option value="Đại lý">Đại lý</Option>
           </Select>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-2">
           <Select 
             className="w-full premium-select" 
             value={debtFilter} 
@@ -276,27 +290,27 @@ export default function CrmPage() {
             <Option value="high_debt">Nợ cao (&gt; 10tr)</Option>
           </Select>
         </div>
-        <div className="col-span-3">
+        <div className="col-span-12 sm:col-span-10 lg:col-span-3">
           <RangePicker 
             className="w-full premium-datepicker" 
             placeholder={['Từ ngày', 'Đến ngày']}
             onChange={(dates) => setDateRange(dates as any)}
           />
         </div>
-        <div className="col-span-1">
-          <Button icon={<ReloadOutlined />} onClick={fetchCustomers} className="h-11 w-full rounded-xl border-slate-200" />
+        <div className="col-span-12 sm:col-span-2 lg:col-span-1">
+          <Button icon={<ReloadOutlined />} onClick={fetchCustomers} className="h-11 w-full rounded-xl border-slate-200 flex items-center justify-center" />
         </div>
       </div>
 
-      <div className="premium-shadow rounded-[32px] overflow-hidden bg-white">
+      <div className="premium-shadow rounded-[32px] overflow-hidden bg-white border border-slate-100">
         <Table 
+          sticky={{ offsetHeader: 72 }}
           columns={columns} 
           dataSource={filteredData} 
           rowKey="id" 
           loading={loading}
-          pagination={{ pageSize: 12, placement: 'bottomCenter' }}
+          pagination={{ pageSize: 12, position: ['bottomCenter'] } as any}
           className="designer-table"
-          scroll={{ x: 'max-content' }}
         />
       </div>
 

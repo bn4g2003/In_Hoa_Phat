@@ -144,17 +144,19 @@ export default function StaffPage() {
 
       <div className="premium-shadow rounded-[32px] overflow-hidden bg-white border border-slate-100">
         <Table 
+          sticky={{ offsetHeader: 72 }}
           columns={[
             {
               title: 'Nhân viên',
               key: 'user',
+              onCell: () => ({ 'data-label': 'Nhân viên' } as any),
               render: (_: any, record: any) => (
                 <Space size="middle">
                   <Avatar 
                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${record.username}`} 
                     className="shadow-sm border border-slate-100" 
                   />
-                  <div className="flex flex-col">
+                  <div className="flex flex-col text-left">
                     <Text strong className="text-slate-900 leading-tight">{record.full_name}</Text>
                     <Text className="text-[10px] text-slate-400 font-bold uppercase">@{record.username}</Text>
                   </div>
@@ -165,12 +167,14 @@ export default function StaffPage() {
               title: 'Chức vụ',
               dataIndex: ['roles', 'name'],
               key: 'role',
+              onCell: () => ({ 'data-label': 'Chức vụ' } as any),
               render: (role: string) => <Tag color="purple" className="rounded-lg border-none font-bold px-3 py-0.5">{role}</Tag>,
             },
             {
               title: 'Phân hệ',
               dataIndex: ['roles', 'portal'],
               key: 'portal',
+              onCell: () => ({ 'data-label': 'Phân hệ' } as any),
               render: (portal: string) => (
                 <Tag color={portal === 'management' ? 'blue' : 'green'} className="rounded-lg border-none font-bold px-3 py-0.5 uppercase text-[10px]">
                   {portal === 'management' ? 'Quản lý' : 'Sản xuất'}
@@ -181,17 +185,20 @@ export default function StaffPage() {
               title: 'Bộ phận',
               dataIndex: ['departments', 'name'],
               key: 'department',
+              onCell: () => ({ 'data-label': 'Bộ phận' } as any),
               render: (dept: string) => <Text className="font-medium text-slate-600">{dept || '---'}</Text>,
             },
             {
               title: 'Trạng thái',
               key: 'status',
+              onCell: () => ({ 'data-label': 'Trạng thái' } as any),
               render: () => <Badge status="success" text={<Text className="text-[11px] font-bold text-slate-500">HOẠT ĐỘNG</Text>} />,
             },
             {
               title: 'Tham gia',
               dataIndex: 'created_at',
               key: 'created_at',
+              onCell: () => ({ 'data-label': 'Tham gia' } as any),
               render: (date: string) => <Text className="text-slate-500 font-medium">{new Date(date).toLocaleDateString('vi-VN')}</Text>,
             },
             {
@@ -199,6 +206,7 @@ export default function StaffPage() {
               key: 'action',
               width: 100,
               align: 'right' as const,
+              onCell: () => ({ 'data-label': 'Thao tác' } as any),
               render: (_: any, record: any) => (
                 <Space>
                   <Button type="text" icon={<EditOutlined className="text-slate-400" />} onClick={() => handleAddEdit(record)} />
@@ -213,7 +221,7 @@ export default function StaffPage() {
           rowKey="id" 
           loading={loading} 
           className="designer-table"
-          pagination={{ pageSize: 12, placement: 'bottomCenter' }}
+          pagination={{ pageSize: 12, position: ['bottomCenter'] } as any}
         />
       </div>
 

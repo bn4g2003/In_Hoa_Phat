@@ -179,11 +179,14 @@ export default function MainLayout({ children, portal }: MainLayoutProps) {
         trigger={null} 
         collapsible 
         collapsed={collapsed} 
+        breakpoint="lg"
+        collapsedWidth="0"
+        onCollapse={(value) => setCollapsed(value)}
         theme="light" 
         className="premium-sidebar border-none shadow-2xl z-20" 
         width={260}
         style={{ 
-          position: 'sticky', 
+          position: 'fixed', 
           top: 0, 
           height: '100vh', 
           left: 0,
