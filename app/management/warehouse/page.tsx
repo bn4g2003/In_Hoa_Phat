@@ -219,7 +219,7 @@ export default function WarehousePage() {
           </Title>
           <div className="flex items-center gap-2 mt-2">
             <div className="h-1 w-8 bg-indigo-600 rounded-full" />
-            <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Kiểm soát vật tư • Định mức & Điều phối tồn kho</Text>
+            <Text className="premium-label text-slate-400">Kiểm soát vật tư • Định mức & Điều phối tồn kho</Text>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -259,7 +259,7 @@ export default function WarehousePage() {
           <Col span={8} key={idx}>
             <div className={`ui-surface p-6 flex items-center justify-between border-none ${stat.highlight ? 'animate-pulse-subtle shadow-rose-100 shadow-lg' : ''}`}>
               <div className="flex flex-col">
-                <Text className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-1">{stat.title}</Text>
+                <Text className="premium-label mb-1 whitespace-nowrap">{stat.title}</Text>
                 <span className={`text-3xl font-black tracking-tight ${stat.highlight ? 'text-rose-600' : 'text-slate-900'}`}>{stat.value}</span>
               </div>
               <div className={`p-4 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600 text-2xl shadow-sm border border-${stat.color}-100`}>
@@ -288,7 +288,7 @@ export default function WarehousePage() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-black tracking-tight text-slate-900 leading-tight">GIAO DỊCH KHO</span>
-                <Text className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Inventory Transaction</Text>
+                <Text className="text-[10px] font-black uppercase tracking-wider text-indigo-500">Inventory Transaction</Text>
               </div>
             </div>
           </div>
@@ -302,7 +302,7 @@ export default function WarehousePage() {
       >
         <div className="p-8">
           <Form form={form} layout="vertical" onFinish={handleTransaction} initialValues={{ type: 'import' }} onValuesChange={(v) => v.type && setExportType(v.type)}>
-            <Form.Item name="type" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phân loại</Text>} rules={[{ required: true }]}>
+            <Form.Item name="type" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Phân loại</Text>} rules={[{ required: true }]}>
               <Segmented 
                 block 
                 options={[
@@ -312,22 +312,22 @@ export default function WarehousePage() {
                 className="premium-segmented"
               />
             </Form.Item>
-            <Form.Item name="material_id" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Chọn Vật tư</Text>} rules={[{ required: true }]}>
+            <Form.Item name="material_id" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Chọn Vật tư</Text>} rules={[{ required: true }]}>
               <Select placeholder="Tìm vật tư..." className="premium-select" size="large">
                 {materials.map(m => <Option key={m.id} value={m.id}>{m.name} (Tồn: {m.stock_quantity})</Option>)}
               </Select>
             </Form.Item>
             {exportType === 'export' && (
-              <Form.Item name="order_id" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sản xuất (LSX)</Text>} rules={[{ required: true, message: 'Vui lòng chọn LSX liên kết' }]}>
+              <Form.Item name="order_id" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Sản xuất (LSX)</Text>} rules={[{ required: true, message: 'Vui lòng chọn LSX liên kết' }]}>
                 <Select placeholder="Tìm LSX..." className="premium-select" size="large" showSearch filterOption={(input, option) => (option?.children as any || '').toLowerCase().includes(input.toLowerCase())}>
                   {orders.map(o => <Option key={o.id} value={o.id}>{o.code} - {o.title}</Option>)}
                 </Select>
               </Form.Item>
             )}
-            <Form.Item name="quantity" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Số lượng</Text>} rules={[{ required: true }]}>
+            <Form.Item name="quantity" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Số lượng</Text>} rules={[{ required: true }]}>
               <InputNumber min={0.1} className="w-full premium-select h-11" size="large" />
             </Form.Item>
-            <Form.Item name="reason" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Diễn giải</Text>}>
+            <Form.Item name="reason" label={<Text className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Diễn giải</Text>}>
               <Input.TextArea rows={3} placeholder="..." className="rounded-xl border-slate-200" />
             </Form.Item>
             <div className="flex justify-end gap-3 pt-6">

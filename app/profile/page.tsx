@@ -119,7 +119,7 @@ export default function ProfilePage() {
             <Title level={1} className="m-0 text-white font-black">{user?.full_name}</Title>
             <Space className="mt-2">
               <Tag color="blue" className="rounded-full border-none bg-white/20 text-white font-bold px-4">{user?.role?.name?.toUpperCase()}</Tag>
-              <Text className="text-white/70 font-mono tracking-widest">{user?.username}</Text>
+              <Text className="text-white/70 font-mono tracking-wider">{user?.username}</Text>
             </Space>
           </Col>
         </Row>

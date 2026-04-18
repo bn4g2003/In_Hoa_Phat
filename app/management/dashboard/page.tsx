@@ -154,7 +154,7 @@ export default function DashboardPage() {
     return (
       <Tooltip title={
         <div className="p-2">
-          <div className="font-black text-[10px] tracking-widest opacity-70 mb-1">{task.status.toUpperCase()}</div>
+          <div className="font-black text-[10px] tracking-wider opacity-70 mb-1">{task.status.toUpperCase()}</div>
           {task.ready_at && <div className="text-xs">Sẵn sàng: {dayjs(task.ready_at).format('HH:mm DD/MM')}</div>}
           {isDelayed && <div className="text-rose-400 font-bold text-xs mt-1">TRỄ: {delayHours}H</div>}
           {task.material_shortage && <div className="text-amber-300 text-xs">THIẾU VẬT TƯ</div>}
@@ -285,7 +285,7 @@ export default function DashboardPage() {
           </Title>
           <div className="flex items-center gap-2 mt-2">
             <div className="h-1 w-8 bg-indigo-600 rounded-full" />
-            <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tư duy hệ thống • Điều phối đa phân hệ</Text>
+            <Text className="premium-label text-slate-400">Tư duy hệ thống • Điều phối đa phân hệ</Text>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -357,7 +357,7 @@ export default function DashboardPage() {
           <Col span={6} key={idx}>
             <div className="ui-surface p-6 flex items-center justify-between border-none">
               <div className="flex flex-col">
-                <Text className="text-[10px] font-black tracking-widest text-slate-400 uppercase mb-1">{stat.title}</Text>
+                <Text className="premium-label mb-1 whitespace-nowrap">{stat.title}</Text>
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</span>
                   {stat.suffix && <span className="text-sm font-bold text-slate-400">{stat.suffix}</span>}
@@ -387,19 +387,19 @@ export default function DashboardPage() {
       <div className="glass-card p-6 rounded-[24px] flex flex-wrap gap-8 justify-center border-none">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 border-2 border-indigo-100 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600"><PlayCircleOutlined /></div>
-          <Text className="text-[10px] font-black text-slate-500 tracking-widest">READY</Text>
+          <Text className="text-[10px] font-black text-slate-500 tracking-wider">READY</Text>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 border-2 border-rose-100 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 animate-pulse"><WarningOutlined /></div>
-          <Text className="text-[10px] font-black text-rose-600 tracking-widest">DELAYED {">"} 1H</Text>
+          <Text className="text-[10px] font-black text-rose-600 tracking-wider">DELAYED {">"} 1H</Text>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 border-2 border-amber-100 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600"><ClockCircleOutlined /></div>
-          <Text className="text-[10px] font-black text-slate-500 tracking-widest">HOLD / ISSUE</Text>
+          <Text className="text-[10px] font-black text-slate-500 tracking-wider">HOLD / ISSUE</Text>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 border-2 border-emerald-100 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600"><CheckCircleOutlined /></div>
-          <Text className="text-[10px] font-black text-slate-500 tracking-widest">COMPLETED</Text>
+          <Text className="text-[10px] font-black text-slate-500 tracking-wider">COMPLETED</Text>
         </div>
       </div>
 

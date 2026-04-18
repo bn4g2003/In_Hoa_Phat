@@ -49,8 +49,17 @@ body {
 
 .ui-section-title {
   font-weight: 800;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
   color: #0f172a;
+}
+
+.premium-label {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  display: block;
 }
 
 /* Premium UI Components */
@@ -97,7 +106,7 @@ body {
   font-weight: 900 !important;
   text-transform: uppercase !important;
   font-size: 10px !important;
-  letter-spacing: 0.1em !important;
+  letter-spacing: 0.05em !important;
   color: #94a3b8 !important;
   border-bottom: 1px solid #f1f5f9 !important;
   padding: 18px 24px !important;

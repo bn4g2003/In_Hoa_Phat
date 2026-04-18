@@ -233,7 +233,7 @@ export default function OrdersPage() {
           </Title>
           <div className="flex items-center gap-2 mt-2">
             <div className="h-1 w-8 bg-indigo-600 rounded-full" />
-            <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Điều hành sản xuất • Quản lý tiến độ & Tài chính</Text>
+            <Text className="premium-label text-slate-400">Điều hành sản xuất • Quản lý tiến độ & Tài chính</Text>
           </div>
         </div>
         <div className="flex items-center gap-3">

@@ -621,69 +621,114 @@ export default function FinancePage() {
       key: '1',
       label: <span><DollarOutlined /> Giao dịch</span>,
       children: (
-        <div className="space-y-4">
-          <Row gutter={16}>
+        <div className="space-y-6">
+          <Row gutter={[24, 24]}>
             <Col span={6}>
-              <Card className="bg-green-50 border-green-100">
-                <Statistic title="Tổng thu" value={stats.totalIn} suffix="đ" styles={{ content: { color: '#52c41a', fontWeight: 'bold' } }} prefix={<ArrowUpOutlined />} />
-              </Card>
+              <div className="ui-surface p-6 flex items-center justify-between border-none">
+                <div className="flex flex-col">
+                  <Text className="premium-label mb-1">Tổng thu</Text>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-emerald-600 tracking-tight">{stats.totalIn.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-slate-400">đ</span>
+                  </div>
+                </div>
+                <div className="p-4 rounded-2xl bg-emerald-50 text-emerald-600 text-2xl shadow-sm border border-emerald-100">
+                  <ArrowUpOutlined />
+                </div>
+              </div>
             </Col>
             <Col span={6}>
-              <Card className="bg-red-50 border-red-100">
-                <Statistic title="Tổng chi" value={stats.totalOut} suffix="đ" styles={{ content: { color: '#f5222d', fontWeight: 'bold' } }} prefix={<ArrowDownOutlined />} />
-              </Card>
+              <div className="ui-surface p-6 flex items-center justify-between border-none">
+                <div className="flex flex-col">
+                  <Text className="premium-label mb-1">Tổng chi</Text>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-rose-600 tracking-tight">{stats.totalOut.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-slate-400">đ</span>
+                  </div>
+                </div>
+                <div className="p-4 rounded-2xl bg-rose-50 text-rose-600 text-2xl shadow-sm border border-rose-100">
+                  <ArrowDownOutlined />
+                </div>
+              </div>
             </Col>
             <Col span={6}>
-              <Card className="bg-blue-50 border-blue-100">
-                <Statistic title="Dòng tiền ròng" value={stats.netFlow} suffix="đ" styles={{ content: { color: stats.netFlow >= 0 ? '#1890ff' : '#f5222d', fontWeight: 'bold' } }} />
-              </Card>
+              <div className="ui-surface p-6 flex items-center justify-between border-none">
+                <div className="flex flex-col">
+                  <Text className="premium-label mb-1">Dòng tiền ròng</Text>
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-2xl font-black tracking-tight ${stats.netFlow >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+                      {stats.netFlow.toLocaleString()}
+                    </span>
+                    <span className="text-xs font-bold text-slate-400">đ</span>
+                  </div>
+                </div>
+                <div className={`p-4 rounded-2xl ${stats.netFlow >= 0 ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-rose-50 text-rose-600 border-rose-100'} text-2xl shadow-sm border`}>
+                  <FundOutlined />
+                </div>
+              </div>
             </Col>
             <Col span={6}>
-              <Card className="bg-orange-50 border-orange-100">
-                <Statistic title="Số giao dịch" value={stats.transactionCount} suffix="lần" styles={{ content: { color: '#fa8c16', fontWeight: 'bold' } }} />
-              </Card>
+              <div className="ui-surface p-6 flex items-center justify-between border-none">
+                <div className="flex flex-col">
+                  <Text className="premium-label mb-1">Số giao dịch</Text>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-slate-900 tracking-tight">{stats.transactionCount}</span>
+                    <span className="text-xs font-bold text-slate-400">lần</span>
+                  </div>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-100 text-slate-600 text-2xl shadow-sm border border-slate-200">
+                  <HistoryOutlined />
+                </div>
+              </div>
             </Col>
           </Row>
 
-          <Row gutter={16} align="middle">
-            <Col span={6}>
-              <Input prefix={<SearchOutlined />} placeholder="Tìm kiếm..." value={search} onChange={e => setSearch(e.target.value)} allowClear />
-            </Col>
-            <Col span={4}>
-              <Select className="w-full" value={typeFilter} onChange={setTypeFilter}>
-                <Option value="all">Tất cả loại</Option>
-                <Option value="income">Thu</Option>
-                <Option value="expense">Chi</Option>
+          <div className="glass-card p-4 rounded-[28px] grid grid-cols-12 gap-4 items-center">
+            <div className="col-span-3">
+              <Input 
+                prefix={<SearchOutlined className="text-slate-400" />} 
+                placeholder="Tìm giao dịch, khách..." 
+                value={search} 
+                onChange={e => setSearch(e.target.value)} 
+                className="premium-select"
+                allowClear 
+              />
+            </div>
+            <div className="col-span-2">
+              <Select className="w-full premium-select" value={typeFilter} onChange={setTypeFilter}>
+                <Option value="all">TẤT CẢ LOẠI</Option>
+                <Option value="income">THU TIỀN</Option>
+                <Option value="expense">CHI TIỀN</Option>
               </Select>
-            </Col>
-            <Col span={4}>
-              <Select className="w-full" value={categoryFilter} onChange={setCategoryFilter} allowClear placeholder="Danh mục">
-                <Option value="all">Tất cả DM</Option>
-                {categories.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
+            </div>
+            <div className="col-span-2">
+              <Select className="w-full premium-select" value={categoryFilter} onChange={setCategoryFilter} allowClear placeholder="DANH MỤC">
+                <Option value="all">TẤT CẢ DM</Option>
+                {categories.map(c => <Option key={c.id} value={c.id}>{c.name.toUpperCase()}</Option>)}
               </Select>
-            </Col>
-            <Col span={4}>
-              <Select className="w-full" value={accountFilter} onChange={setAccountFilter} allowClear placeholder="Tài khoản">
-                <Option value="all">Tất cả TK</Option>
-                {cashAccounts.map(a => <Option key={a.id} value={a.id}>{a.name}</Option>)}
+            </div>
+            <div className="col-span-2">
+              <Select className="w-full premium-select" value={accountFilter} onChange={setAccountFilter} allowClear placeholder="TÀI KHOẢN">
+                <Option value="all">TẤT CẢ TK</Option>
+                {cashAccounts.map(a => <Option key={a.id} value={a.id}>{a.name.toUpperCase()}</Option>)}
               </Select>
-            </Col>
-            <Col span={4}>
-              <RangePicker className="w-full" onChange={d => setDateRange(d as any)} />
-            </Col>
-            <Col span={2}>
-              <Button icon={<ReloadOutlined />} onClick={fetchData} block />
-            </Col>
-          </Row>
+            </div>
+            <div className="col-span-3">
+              <RangePicker className="w-full premium-datepicker" onChange={d => setDateRange(d as any)} />
+            </div>
+          </div>
 
-          <Table 
-            columns={transactionColumns} 
-            dataSource={transactions} 
-            rowKey="id" 
-            loading={loading} 
-            pagination={{ pageSize: 15 }}
-            scroll={{ x: 1200 }}
-          />
+          <div className="premium-shadow rounded-[32px] overflow-hidden bg-white">
+            <Table 
+              columns={transactionColumns} 
+              dataSource={transactions} 
+              rowKey="id" 
+              loading={loading} 
+              pagination={{ pageSize: 12, position: ['bottomCenter'] }}
+              className="designer-table"
+              scroll={{ x: 'max-content' }}
+            />
+          </div>
         </div>
       )
     },
@@ -691,41 +736,47 @@ export default function FinancePage() {
       key: '2',
       label: <span><WalletOutlined /> Sổ quỹ</span>,
       children: (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <Title level={5} className="m-0">Danh sách tài khoản</Title>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingAccount(null); accountForm.resetFields(); setAccountModalVisible(true); }}>
-              Thêm tài khoản
+            <Text className="premium-label text-slate-900">Danh sách tài khoản thanh toán</Text>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingAccount(null); accountForm.resetFields(); setAccountModalVisible(true); }} className="rounded-xl font-bold bg-indigo-600 border-none px-6">
+              THÊM TÀI KHOẢN
             </Button>
           </div>
           
-          <Row gutter={16}>
+          <Row gutter={[20, 20]}>
             {cashAccounts.map(acc => (
               <Col span={6} key={acc.id}>
-                <Card 
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                <div 
+                  className="ui-surface p-5 cursor-pointer flex flex-col justify-between h-full bg-white border-slate-100"
                   onClick={() => { setSelectedAccount(acc); }}
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    {acc.type === 'bank' && <BankOutlined className="text-blue-500 text-lg" />}
-                    {acc.type === 'cash' && <WalletOutlined className="text-green-500 text-lg" />}
-                    {acc.type === 'momo' && <CreditCardOutlined className="text-purple-500 text-lg" />}
-                    <Text strong>{acc.name}</Text>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`p-3 rounded-xl bg-${acc.type === 'bank' ? 'blue' : acc.type === 'momo' ? 'purple' : 'emerald'}-50 text-${acc.type === 'bank' ? 'blue' : acc.type === 'momo' ? 'purple' : 'emerald'}-600 text-xl`}>
+                      {acc.type === 'bank' && <BankOutlined />}
+                      {acc.type === 'cash' && <WalletOutlined />}
+                      {acc.type === 'momo' && <CreditCardOutlined />}
+                    </div>
+                    <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{acc.type}</Text>
                   </div>
-                  <Statistic 
-                    value={acc.balance || 0} 
-                    suffix="đ" 
-                    styles={{ content: { color: (acc.balance || 0) >= 0 ? '#1890ff' : '#f5222d', fontWeight: 'bold', fontSize: 20 } }}
-                  />
-                  {acc.type === 'bank' && acc.account_number && (
-                    <Text type="secondary" className="text-xs">{acc.bank_name} - {acc.account_number}</Text>
-                  )}
-                </Card>
+                  <div>
+                    <Text strong className="text-slate-900 block mb-1">{acc.name}</Text>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className={`text-xl font-black ${ (acc.balance || 0) >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>{acc.balance?.toLocaleString()}</span>
+                      <span className="text-xs font-bold text-slate-400">đ</span>
+                    </div>
+                    {acc.type === 'bank' && acc.account_number && (
+                      <Text className="text-[10px] text-slate-400 font-mono block truncate">{acc.bank_name} • {acc.account_number}</Text>
+                    )}
+                  </div>
+                </div>
               </Col>
             ))}
           </Row>
 
-          <Table columns={accountColumns} dataSource={cashAccounts} rowKey="id" pagination={false} />
+          <div className="premium-shadow rounded-[28px] overflow-hidden">
+            <Table columns={accountColumns} dataSource={cashAccounts} rowKey="id" pagination={false} className="designer-table" />
+          </div>
         </div>
       )
     },
@@ -733,76 +784,92 @@ export default function FinancePage() {
       key: '3',
       label: <span><BarChartOutlined /> Báo cáo</span>,
       children: (
-        <div className="space-y-6">
-          <Row gutter={16}>
+        <div className="space-y-8">
+          <Row gutter={[24, 24]}>
             <Col span={12}>
-              <Card title="Thu chi theo ngày (14 ngày gần nhất)">
+              <div className="ui-surface p-6 bg-white border-slate-100">
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><BarChartOutlined /></div>
+                  <Text className="premium-label text-slate-900">Thu chi theo ngày (14 ngày gần nhất)</Text>
+                </div>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={getDailyData()}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis tickFormatter={(v) => `${(v/1000000).toFixed(1)}M`} />
-                    <Tooltip formatter={(v: any) => v?.toLocaleString() + ' đ'} />
-                    <Legend />
-                    <Line type="monotone" dataKey="thu" stroke="#52c41a" name="Thu" strokeWidth={2} />
-                    <Line type="monotone" dataKey="chi" stroke="#f5222d" name="Chi" strokeWidth={2} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} tickFormatter={(v) => `${(v/1000000).toFixed(1)}M`} />
+                    <Tooltip cursor={{ stroke: '#6366f1', strokeWidth: 2 }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} formatter={(v: any) => v?.toLocaleString() + ' đ'} />
+                    <Legend iconType="circle" />
+                    <Line type="monotone" dataKey="thu" stroke="#10b981" name="Thu" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                    <Line type="monotone" dataKey="chi" stroke="#f43f5e" name="Chi" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
                   </LineChart>
                 </ResponsiveContainer>
-              </Card>
+              </div>
             </Col>
             <Col span={12}>
-              <Card title="Chi theo danh mục">
+              <div className="ui-surface p-6 bg-white border-slate-100">
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><FundOutlined /></div>
+                  <Text className="premium-label text-slate-900">Chi theo danh mục</Text>
+                </div>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
-                    <Pie data={getCategoryData()} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}>
+                    <Pie data={getCategoryData()} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={5} cornerRadius={8}>
                       {getCategoryData().map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(v: any) => v?.toLocaleString() + ' đ'} />
+                    <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} formatter={(v: any) => v?.toLocaleString() + ' đ'} />
                   </PieChart>
                 </ResponsiveContainer>
-              </Card>
+              </div>
             </Col>
           </Row>
-          <Row gutter={16}>
-            <Col span={24}>
-              <Card title="Số dư theo tài khoản">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={getAccountBalanceData()}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis tickFormatter={(v) => `${(v/1000000).toFixed(1)}M`} />
-                    <Tooltip formatter={(v: any) => v?.toLocaleString() + ' đ'} />
-                    <Bar dataKey="balance" fill="#1890ff" name="Số dư" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-            </Col>
-          </Row>
+          <div className="ui-surface p-6 bg-white border-slate-100">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><WalletOutlined /></div>
+              <Text className="premium-label text-slate-900">Số dư theo tài khoản</Text>
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={getAccountBalanceData()} barSize={40}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} tickFormatter={(v) => `${(v/1000000).toFixed(1)}M`} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} formatter={(v: any) => v?.toLocaleString() + ' đ'} />
+                <Bar dataKey="balance" fill="url(#barGradient)" radius={[8, 8, 0, 0]}>
+                  {getAccountBalanceData().map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.balance >= 0 ? '#6366f1' : '#f43f5e'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )
     }
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+    <div className="space-y-8 max-w-[1600px] mx-auto animate-in">
+      <div className="flex justify-between items-end">
         <div>
-          <Title level={3} className="m-0"><DollarOutlined className="text-green-600" /> Quản lý Tài chính</Title>
-          <Text type="secondary">Theo dõi thu chi, sổ quỹ và báo cáo tài chính</Text>
+          <Title level={2} className="m-0 font-black tracking-tight text-slate-900">
+            MASTER <span className="text-emerald-600">FINANCE</span>
+          </Title>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="h-1 w-8 bg-emerald-600 rounded-full" />
+            <Text className="premium-label text-slate-400">Dòng tiền • Thu chi & Sổ quỹ doanh nghiệp</Text>
+          </div>
         </div>
-        <Space>
-          <Button icon={<FileExcelOutlined />} onClick={exportToExcel}>Xuất Excel</Button>
-          <Button icon={<SwapOutlined />} onClick={() => setTransferModalVisible(true)}>Chuyển khoản</Button>
+        <div className="flex items-center gap-3">
+          <Button icon={<FileExcelOutlined />} onClick={exportToExcel} className="h-12 px-6 rounded-2xl font-bold border-slate-200">XUẤT EXCEL</Button>
+          <Button icon={<SwapOutlined />} onClick={() => setTransferModalVisible(true)} className="h-12 px-6 rounded-2xl font-bold border-slate-200">CHUYỂN KHOẢN</Button>
           <Button 
             type="primary" 
             icon={<PlusOutlined />} 
             onClick={() => setTransactionModalVisible(true)}
-            className="h-10 px-6 rounded-xl font-bold bg-green-600 shadow-green-100 shadow-lg border-none"
+            className="h-12 px-8 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 shadow-lg border-none"
           >
             TẠO GIAO DỊCH
           </Button>
-          <Button icon={<ReloadOutlined />} onClick={fetchData} loading={loading}>Làm mới</Button>
-        </Space>
+        </div>
       </div>
 
       <Card className="shadow-sm">
@@ -811,12 +878,23 @@ export default function FinancePage() {
 
       {/* Transaction Modal */}
       <Modal
-        title="Tạo giao dịch thu/chi"
+        title={
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><DollarOutlined /></div>
+            <div>
+              <div className="text-lg font-black text-slate-900 leading-tight">TẠO GIAO DỊCH</div>
+              <Text className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Financial Entry</Text>
+            </div>
+          </div>
+        }
         open={transactionModalVisible}
         onCancel={() => setTransactionModalVisible(false)}
         footer={null}
         width={600}
+        centered
+        className="premium-modal no-padding-body"
       >
+        <div className="p-8">
         <Form form={form} layout="vertical" onFinish={handleCreateTransaction} initialValues={{ type: 'income', transaction_date: dayjs() }}>
           <Form.Item name="type" label="Loại giao dịch">
             <Segmented block options={[{ label: 'THU TIỀN', value: 'income' }, { label: 'CHI TIỀN', value: 'expense' }]} />
