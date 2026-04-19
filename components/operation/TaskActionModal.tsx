@@ -27,6 +27,16 @@ import { FileSearchOutlined } from '@ant-design/icons';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+const formatDuration = (totalSeconds: number) => {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+};
+
 interface TaskActionModalProps {
   visible: boolean;
   task: any;
@@ -61,11 +71,12 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
     let interval: any;
     if (visible && task && (task.status === 'on_hold' || task.status === 'issue') && task.hold_start_time) {
       const updateLiveTime = () => {
-        const currentHold = dayjs().diff(dayjs(task.hold_start_time), 'second');
-        setLiveHoldSeconds((task.total_hold_seconds || 0) + currentHold);
+        const startTime = task.hold_start_time ? dayjs(task.hold_start_time) : dayjs(task.updated_at);
+        const currentHold = dayjs().diff(startTime, 'second');
+        setLiveHoldSeconds((task.total_hold_seconds || 0) + Math.max(0, currentHold));
       };
       updateLiveTime();
-      interval = setInterval(updateLiveTime, 10000); // Update every 10s
+      interval = setInterval(updateLiveTime, 1000); // Update every 1s
     } else if (task) {
       setLiveHoldSeconds(task.total_hold_seconds || 0);
     }
@@ -131,12 +142,17 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
         updates.kpi_start_time = now;
       }
 
-      // If leaving hold/issue status, accumulate duration
+      // If leaving hold/issue status, accumulate duration and clear log
       if ((task.status === 'on_hold' || task.status === 'issue') && task.hold_start_time) {
         if (newStatus !== task.status) {
           const holdSecs = dayjs(now).diff(dayjs(task.hold_start_time), 'second');
           updates.total_hold_seconds = (task.total_hold_seconds || 0) + holdSecs;
           updates.hold_start_time = null;
+          
+          // Clear issue log when task is resumed/moved to next state
+          if (newStatus === 'in_progress' || newStatus === 'done' || newStatus === 'ready') {
+            updates.issue_log = null;
+          }
         }
       }
 
@@ -308,12 +324,16 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
             <Col span={8}>
               <Card size="small" className="text-center shadow-inner bg-gray-50 border-none">
                 <Statistic 
-                  title="Tổng thời gian hoãn" 
-                  value={Math.round(liveHoldSeconds / 60)} 
-                  suffix="phút" 
-                  valueStyle={{ fontSize: 18, fontWeight: 'bold' }} 
+                  title="Thời gian gián đoạn" 
+                  value={formatDuration(liveHoldSeconds)} 
+                  valueStyle={{ fontSize: 20, fontWeight: 'bold', color: (task?.status === 'on_hold' || task?.status === 'issue') ? '#f59e0b' : 'inherit' }} 
                   prefix={<ClockCircleOutlined className={task?.status === 'on_hold' || task?.status === 'issue' ? 'text-orange-500 animate-pulse' : ''} />}
                 />
+                {task?.total_hold_seconds > 0 && (task?.status === 'on_hold' || task?.status === 'issue') && (
+                  <Text type="secondary" className="text-[10px]">
+                    (Đã tích lũy: {formatDuration(task.total_hold_seconds)})
+                  </Text>
+                )}
               </Card>
             </Col>
           </Row>

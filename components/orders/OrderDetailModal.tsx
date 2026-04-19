@@ -302,7 +302,11 @@ export default function OrderDetailModal({ visible, order, onClose, onRefresh, u
                               task.status === 'issue' ? 'red' : 
                               task.status === 'ready' ? 'cyan' : 'default'
                             } className="rounded-md border-none font-bold uppercase text-[10px] px-2 py-0.5">
-                              {task.status.toUpperCase()}
+                              {task.status === 'done' ? 'HOÀN TẤT' : 
+                               task.status === 'in_progress' ? 'ĐANG LÀM' :
+                               task.status === 'ready' ? 'SẴN SÀNG' :
+                               task.status === 'on_hold' ? 'TẠM HOÃN' :
+                               task.status.toUpperCase()}
                             </Tag>
                             {task.material_shortage && <Tag color="error" className="animate-pulse rounded-md border-none font-bold text-[10px]">THIẾU VẬT TƯ</Tag>}
                           </div>
@@ -346,7 +350,7 @@ export default function OrderDetailModal({ visible, order, onClose, onRefresh, u
                       </Col>
                     </Row>
 
-                    {task.issue_log && (
+                    {(task.status === 'issue' || task.status === 'on_hold') && task.issue_log && (
                       <div className="mt-3 p-3 bg-rose-50 rounded-xl border border-rose-100 flex items-start gap-2">
                         <WarningOutlined className="text-rose-500 mt-0.5" />
                         <div className="text-xs text-rose-700">

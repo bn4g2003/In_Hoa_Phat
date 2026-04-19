@@ -92,6 +92,18 @@ export default function OrderQuickViewModal({
     return colors[status] || 'slate';
   };
 
+  const getStatusLabel = (status: string) => {
+    const labels: any = {
+      done: 'HOÀN TẤT',
+      in_progress: 'ĐANG LÀM',
+      ready: 'CHỜ NHẬN',
+      issue: 'SỰ CỐ',
+      on_hold: 'TẠM HOÃN',
+      pending: 'CHỜ BƯỚC TRƯỚC'
+    };
+    return labels[status] || status.toUpperCase();
+  };
+
   const tabItems = [
     {
       key: '1',
@@ -167,7 +179,7 @@ export default function OrderQuickViewModal({
                         `}
                       >
                         {task.status === 'done' ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
-                        {task.departments?.name}
+                        {task.departments?.name}: {getStatusLabel(task.status)}
                       </div>
                     );
                   })}
@@ -194,7 +206,7 @@ export default function OrderQuickViewModal({
                   <Tag 
                     className={`m-0 border-none font-black text-[10px] rounded-full px-3 py-0.5 bg-${getStatusColor(task.status)}-100 text-${getStatusColor(task.status)}-700`}
                   >
-                    {task.status.toUpperCase()}
+                    {getStatusLabel(task.status)}
                   </Tag>
                 </div>
               ),
@@ -217,6 +229,11 @@ export default function OrderQuickViewModal({
                   {task.issue_log && (
                     <div className="mt-2 p-2 bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold flex items-center gap-2">
                        <WarningOutlined /> {task.issue_log}
+                    </div>
+                  )}
+                  {task.material_shortage && (
+                    <div className="mt-2 p-2 bg-amber-100 text-amber-700 rounded-lg text-[11px] font-bold flex items-center gap-2">
+                       <ClockCircleOutlined /> ĐANG THIẾU VẬT TƯ (CHỜ KHO)
                     </div>
                   )}
                 </div>
