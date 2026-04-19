@@ -20,6 +20,8 @@ import {
 import { supabase } from '@/lib/supabase';
 import dayjs from 'dayjs';
 import { getUser, User } from '@/lib/auth';
+import OrderDetailModal from '@/components/orders/OrderDetailModal';
+import { FileSearchOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -51,6 +53,7 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
   const [user, setUser] = useState<User | null>(null);
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loadingMachines, setLoadingMachines] = useState(false);
+  const [orderDetailVisible, setOrderDetailVisible] = useState(false);
 
   useEffect(() => {
     const currentUser = getUser();
@@ -267,7 +270,7 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
           <Row gutter={16}>
             <Col span={16}>
               <Alert 
-                message={`Trạng thái: ${task?.status?.toUpperCase()}`} 
+                title={`Trạng thái: ${task?.status?.toUpperCase()}`} 
                 description={
                   task?.status === 'on_hold' 
                     ? `Đang hoãn do: ${task.issue_log}` 
@@ -468,7 +471,7 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
             {task?.material_shortage && (
               <Alert 
                 className="mt-4"
-                message="ĐANG THIẾU VẬT TƯ - HOÃN HỢP LỆ"
+                title="ĐANG THIẾU VẬT TƯ - HOÃN HỢP LỆ"
                 description={`Thiếu: ${(task?.material_requested_qty || 0) - (task?.material_received_qty || 0)} đơn vị. KPI đã chuyển sang Kho 2.`}
                 type="warning"
                 showIcon
@@ -497,7 +500,7 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
               {isShortage && task?.status !== 'on_hold' && (
                 <Alert 
                   className="mb-4"
-                  message="CẢNH BÁO THIẾU HỤT"
+                  title="CẢNH BÁO THIẾU HỤT"
                   description="Nếu không thể tiếp tục sản xuất với số lượng hiện có, hãy chọn HOÃN HỢP LỆ để chuyển KPI sang Kho 2."
                   type="warning"
                   showIcon
@@ -521,7 +524,18 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
         <Space size="large">
           <div className="bg-blue-600 p-2 rounded-xl"><ThunderboltOutlined className="text-white" /></div>
           <div>
-            <div className="font-bold text-lg leading-tight">{task?.departments?.name}</div>
+            <div className="font-bold text-lg leading-tight flex items-center gap-2">
+              {task?.departments?.name}
+              <Button 
+                size="small" 
+                type="dashed" 
+                icon={<FileSearchOutlined />}
+                onClick={() => setOrderDetailVisible(true)}
+                className="text-[10px] h-6 rounded-md border-blue-200 text-blue-600 bg-blue-50"
+              >
+                Chi tiết đơn
+              </Button>
+            </div>
             <Text type="secondary" style={{ fontSize: '11px' }}>
               #{task?.production_orders?.code} - {task?.production_orders?.title}
             </Text>
@@ -536,6 +550,13 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
       className="task-modal-v2"
     >
       <Tabs defaultActiveKey="1" items={tabItems} className="mt-4" destroyOnHidden />
+
+      <OrderDetailModal 
+        visible={orderDetailVisible} 
+        order={task?.production_orders ? { ...task.production_orders, id: task.order_id } : null}
+        onClose={() => setOrderDetailVisible(false)}
+        userRole="operation"
+      />
     </Modal>
   );
 }

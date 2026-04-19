@@ -629,7 +629,7 @@ export default function FinancePage() {
                 <div className="flex flex-col">
                   <Text className="premium-label mb-1">Tổng thu</Text>
                   <div className="flex items-baseline gap-1 whitespace-nowrap">
-                    <span className="text-2xl font-black text-emerald-600 leading-none">{stats.totalIn.toLocaleString()}</span>
+                    <span className="text-2xl font-black text-emerald-600 leading-none">{(stats.totalIn || 0).toLocaleString()}</span>
                     <span className="text-xs font-bold text-slate-400">đ</span>
                   </div>
                 </div>
@@ -643,7 +643,7 @@ export default function FinancePage() {
                 <div className="flex flex-col">
                   <Text className="premium-label mb-1">Tổng chi</Text>
                   <div className="flex items-baseline gap-1 whitespace-nowrap">
-                    <span className="text-2xl font-black text-rose-600 leading-none">{stats.totalOut.toLocaleString()}</span>
+                    <span className="text-2xl font-black text-rose-600 leading-none">{(stats.totalOut || 0).toLocaleString()}</span>
                     <span className="text-xs font-bold text-slate-400">đ</span>
                   </div>
                 </div>
@@ -658,7 +658,7 @@ export default function FinancePage() {
                   <Text className="premium-label mb-1">Dòng tiền ròng</Text>
                   <div className="flex items-baseline gap-1 whitespace-nowrap">
                     <span className={`text-2xl font-black leading-none ${stats.netFlow >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
-                      {stats.netFlow.toLocaleString()}
+                      {(stats.netFlow || 0).toLocaleString()}
                     </span>
                     <span className="text-xs font-bold text-slate-400">đ</span>
                   </div>

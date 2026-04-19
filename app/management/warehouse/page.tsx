@@ -141,8 +141,8 @@ export default function WarehousePage() {
                 key: 'stock_quantity', 
                 onCell: () => ({ 'data-label': 'Tồn kho' } as any),
                 render: (q: number, record: any) => (
-                  <Text strong className={q <= record.min_stock ? 'text-rose-600 animate-pulse' : 'text-indigo-600 font-mono text-lg'}>
-                    {q.toLocaleString()}
+                  <Text strong className={(q || 0) <= (record.min_stock || 0) ? 'text-rose-600 animate-pulse' : 'text-indigo-600 font-mono text-lg'}>
+                    {(q || 0).toLocaleString()}
                   </Text>
                 )
               },
@@ -188,7 +188,7 @@ export default function WarehousePage() {
               { title: 'Thời gian', dataIndex: 'created_at', key: 'created_at', onCell: () => ({ 'data-label': 'Thời gian' } as any), render: (d: string) => <Text className="text-slate-400 font-mono text-xs">{dayjs(d).format('DD/MM HH:mm')}</Text> },
               { title: 'Vật tư', dataIndex: ['materials', 'name'], key: 'material', onCell: () => ({ 'data-label': 'Vật tư' } as any), render: (t: string) => <Text strong className="text-slate-800">{t}</Text> },
               { title: 'LSX Liên kết', dataIndex: ['production_orders', 'code'], key: 'lsx', onCell: () => ({ 'data-label': 'LSX' } as any), render: (v: string) => v ? <Tag color="indigo" className="font-mono font-bold border-none">{v}</Tag> : <Text className="text-slate-300">---</Text> },
-              { title: 'Số lượng', dataIndex: 'quantity', key: 'quantity', align: 'right' as const, onCell: () => ({ 'data-label': 'Số lượng' } as any), render: (q: number, r: any) => <Text strong className={r.type === 'import' ? 'text-emerald-600' : 'text-rose-600'}>{r.type === 'import' ? '+' : '-'}{q.toLocaleString()}</Text> },
+              { title: 'Số lượng', dataIndex: 'quantity', key: 'quantity', align: 'right' as const, onCell: () => ({ 'data-label': 'Số lượng' } as any), render: (q: number, r: any) => <Text strong className={r.type === 'import' ? 'text-emerald-600' : 'text-rose-600'}>{r.type === 'import' ? '+' : '-'}{(q || 0).toLocaleString()}</Text> },
               { title: 'Ghi chú/Lý do', dataIndex: 'reason', key: 'reason', ellipsis: true, onCell: () => ({ 'data-label': 'Lý do' } as any), render: (t: string) => <Text className="text-slate-500 italic">{t}</Text> }
             ]} 
             dataSource={logs} 
@@ -296,7 +296,7 @@ export default function WarehousePage() {
 
       {lowStockMaterials.length > 0 && (
         <Alert
-          message={<Text strong className="text-red-800">CẢNH BÁO TỒN KHO DƯỚI NGƯỠNG AN TOÀN</Text>}
+          title={<Text strong className="text-red-800">CẢNH BÁO TỒN KHO DƯỚI NGƯỠNG AN TOÀN</Text>}
           description={
             <div className="mt-2">
               {lowStockMaterials.map(m => <Tag key={m.id} color="red" className="mb-1">{m.name}: Chỉ còn {m.stock_quantity} {m.unit}</Tag>)}

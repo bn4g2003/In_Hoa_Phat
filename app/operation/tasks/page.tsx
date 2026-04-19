@@ -16,8 +16,10 @@ import {
   FileExcelOutlined,
   FilePdfOutlined,
   FilterOutlined,
-  EyeOutlined
+  EyeOutlined,
+  FileSearchOutlined
 } from '@ant-design/icons';
+import OrderDetailModal from '@/components/orders/OrderDetailModal';
 import { supabase } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -36,6 +38,8 @@ export default function TasksPage() {
   
   const [actionModalVisible, setActionModalVisible] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [orderDetailVisible, setOrderDetailVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('ppms_user');
@@ -52,7 +56,7 @@ export default function TasksPage() {
         .from('tasks')
         .select(`
           *,
-          production_orders (code, title, specs),
+          production_orders (*),
           departments (name, code)
         `)
         .order('updated_at', { ascending: false });
@@ -127,8 +131,11 @@ export default function TasksPage() {
       key: 'order',
       onCell: () => ({ 'data-label': 'Lệnh in' } as any),
       render: (_: any, record: any) => (
-        <Space orientation="vertical" size={0} className="text-left">
-          <Text strong className="text-blue-600 font-mono tracking-tighter">{record.production_orders?.code}</Text>
+        <Space orientation="vertical" size={0} className="text-left group cursor-pointer" onClick={() => { setSelectedOrder(record.production_orders); setOrderDetailVisible(true); }}>
+          <div className="flex items-center gap-1">
+            <Text strong className="text-blue-600 font-mono tracking-tighter">{record.production_orders?.code}</Text>
+            <FileSearchOutlined className="text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity" title="Xem chi tiết đơn hàng" />
+          </div>
           <Text className="text-[11px] text-slate-400 font-bold uppercase truncate max-w-[200px]">{record.production_orders?.title}</Text>
         </Space>
       ),
@@ -288,6 +295,13 @@ export default function TasksPage() {
         task={selectedTask} 
         onClose={() => setActionModalVisible(false)} 
         onRefresh={fetchTasks} 
+      />
+
+      <OrderDetailModal 
+        visible={orderDetailVisible} 
+        order={selectedOrder}
+        onClose={() => setOrderDetailVisible(false)}
+        userRole="operation"
       />
     </div>
   );

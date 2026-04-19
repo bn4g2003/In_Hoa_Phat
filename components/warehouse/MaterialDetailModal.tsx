@@ -218,7 +218,7 @@ export default function MaterialDetailModal({ visible, material, onClose, onRefr
         <div className="p-4">
           {isLowStock && (
             <Alert
-              message="CẢNH BÁO TỒN KHO THẤP"
+              title="CẢNH BÁO TỒN KHO THẤP"
               description={`Tồn kho hiện tại (${material?.stock_quantity}) đang dưới ngưỡng tối thiểu (${material?.min_stock})`}
               type="warning"
               showIcon

@@ -159,7 +159,7 @@ export default function DashboardPage() {
           {isDelayed && <div className="text-rose-400 font-bold text-xs mt-1">TRỄ: {delayHours}H</div>}
           {task.material_shortage && <div className="text-amber-300 text-xs">THIẾU VẬT TƯ</div>}
         </div>
-      } color={isDelayed ? '#ef4444' : '#1e293b'} overlayInnerStyle={{ borderRadius: '12px' }}>
+      } color={isDelayed ? '#ef4444' : '#1e293b'} styles={{ container: { borderRadius: '12px' } }}>
         <div
           className={`
             relative group overflow-hidden cursor-pointer

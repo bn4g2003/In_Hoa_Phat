@@ -59,7 +59,8 @@ export default function OrderDetailModal({ visible, order, onClose, onRefresh, u
         .from('tasks')
         .select(`
           *,
-          departments (name, code)
+          departments (name, code),
+          users:assigned_to (full_name)
         `)
         .eq('order_id', order.id)
         .order('sequence_order', { ascending: true });
@@ -267,34 +268,100 @@ export default function OrderDetailModal({ visible, order, onClose, onRefresh, u
           <Steps
             orientation="vertical"
             current={tasks.findIndex(t => t.status !== 'done')}
-            items={tasks.map((task, idx) => ({
-              title: task.departments?.name,
-              description: (
-                <div className="mt-2">
-                  <Tag color={
-                    task.status === 'done' ? 'green' : 
-                    task.status === 'in_progress' ? 'blue' : 
-                    task.status === 'issue' ? 'red' : 
-                    task.status === 'ready' ? 'cyan' : 'default'
-                  }>
-                    {task.status.toUpperCase()}
-                  </Tag>
-                  {task.start_time && (
-                    <Text type="secondary" className="block text-xs mt-1">
-                      Bắt đầu: {dayjs(task.start_time).format('DD/MM HH:mm')}
-                    </Text>
-                  )}
-                  {task.end_time && (
-                    <Text type="secondary" className="block text-xs">
-                      Xong: {dayjs(task.end_time).format('DD/MM HH:mm')}
-                    </Text>
-                  )}
-                </div>
-              ),
-              icon: task.status === 'done' ? <CheckCircleOutlined /> : 
-                    task.status === 'in_progress' ? <SyncOutlined spin /> : 
-                    task.status === 'issue' ? <WarningOutlined /> : null
-            }))}
+            className="order-detail-steps"
+            items={tasks.map((task, idx) => {
+              const operatorName = task.users?.full_name || 'Chưa có người nhận';
+              const isIssue = task.status === 'issue' || task.material_shortage;
+              
+              // Calculate duration
+              let durationStr = '';
+              if (task.start_time && task.end_time) {
+                const diff = dayjs(task.end_time).diff(dayjs(task.start_time), 'minute');
+                durationStr = diff > 60 
+                  ? `${Math.floor(diff/60)} giờ ${diff%60} phút` 
+                  : `${diff} phút`;
+              }
+
+              return {
+                title: (
+                  <div className="flex items-center gap-3">
+                    <span className="text-slate-400 font-mono text-sm">BƯỚC {idx + 1}</span>
+                    <Text strong className="text-lg">{task.departments?.name}</Text>
+                  </div>
+                ),
+                subTitle: task.status === 'done' && durationStr ? <Tag className="m-0 rounded-md font-normal border-none bg-slate-100 text-slate-500">Thực hiện trong: {durationStr}</Tag> : null,
+                description: (
+                  <div className="mt-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm ml-2">
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Tag color={
+                              task.status === 'done' ? 'green' : 
+                              task.status === 'in_progress' ? 'blue' : 
+                              task.status === 'issue' ? 'red' : 
+                              task.status === 'ready' ? 'cyan' : 'default'
+                            } className="rounded-md border-none font-bold uppercase text-[10px] px-2 py-0.5">
+                              {task.status.toUpperCase()}
+                            </Tag>
+                            {task.material_shortage && <Tag color="error" className="animate-pulse rounded-md border-none font-bold text-[10px]">THIẾU VẬT TƯ</Tag>}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-xs">
+                            <Text type="secondary">Nhân sự:</Text>
+                            <Text strong>{operatorName}</Text>
+                          </div>
+
+                          {task.machine_info?.machine_id && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <Text type="secondary">Máy & Chế độ:</Text>
+                              <Text className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100 italic">
+                                {task.machine_info.machine_id} - {task.machine_info.mode}
+                              </Text>
+                            </div>
+                          )}
+                        </div>
+                      </Col>
+                      <Col span={12} className="border-l border-dashed border-slate-100 pl-4">
+                        <div className="space-y-1">
+                          {task.ready_at && (
+                            <div className="flex justify-between text-[11px]">
+                              <Text type="secondary">Sẵn sàng:</Text>
+                              <Text>{dayjs(task.ready_at).format('HH:mm - DD/MM')}</Text>
+                            </div>
+                          )}
+                          {task.start_time && (
+                            <div className="flex justify-between text-[11px]">
+                              <Text type="secondary">Bắt đầu:</Text>
+                              <Text className="text-blue-500">{dayjs(task.start_time).format('HH:mm - DD/MM')}</Text>
+                            </div>
+                          )}
+                          {task.end_time && (
+                            <div className="flex justify-between text-[11px]">
+                              <Text type="secondary">Hoàn tất:</Text>
+                              <Text className="text-green-600">{dayjs(task.end_time).format('HH:mm - DD/MM')}</Text>
+                            </div>
+                          )}
+                        </div>
+                      </Col>
+                    </Row>
+
+                    {task.issue_log && (
+                      <div className="mt-3 p-3 bg-rose-50 rounded-xl border border-rose-100 flex items-start gap-2">
+                        <WarningOutlined className="text-rose-500 mt-0.5" />
+                        <div className="text-xs text-rose-700">
+                          <Text strong className="text-rose-700 block mb-0.5">Ghi chú/Sự cố:</Text>
+                          {task.issue_log}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ),
+                icon: task.status === 'done' ? <CheckCircleOutlined className="text-green-500" /> : 
+                      task.status === 'in_progress' ? <SyncOutlined spin className="text-blue-500" /> : 
+                      task.status === 'issue' ? <WarningOutlined className="text-red-500" /> : null
+              };
+            })}
           />
         </div>
       )
@@ -334,7 +401,7 @@ export default function OrderDetailModal({ visible, order, onClose, onRefresh, u
                 <Table 
                   columns={[
                     { title: 'Ngày', dataIndex: 'created_at', key: 'date', render: d => dayjs(d).format('DD/MM HH:mm') },
-                    { title: 'Số tiền', dataIndex: 'amount', key: 'amount', align: 'right' as const, render: v => <Text strong>{v.toLocaleString()} đ</Text> },
+                    { title: 'Số tiền', dataIndex: 'amount', key: 'amount', align: 'right' as const, render: v => <Text strong>{(v || 0).toLocaleString()} đ</Text> },
                     { title: 'Hình thức', dataIndex: 'method', key: 'method' }
                   ]}
                   dataSource={payments}
