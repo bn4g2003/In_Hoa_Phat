@@ -15,6 +15,7 @@ const { Title, Text } = Typography;
 interface CreateOrderModalProps {
   visible: boolean;
   onClose: () => void;
+  customerId?: string;
 }
 
 interface WorkflowTemplate {
@@ -24,7 +25,7 @@ interface WorkflowTemplate {
   department_sequence: number[];
 }
 
-export default function CreateOrderModal({ visible, onClose }: CreateOrderModalProps) {
+export default function CreateOrderModal({ visible, onClose, customerId }: CreateOrderModalProps) {
   const [form] = Form.useForm();
   const [customers, setCustomers] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -37,8 +38,11 @@ export default function CreateOrderModal({ visible, onClose }: CreateOrderModalP
   useEffect(() => {
     if (visible) {
       fetchData();
+      if (customerId) {
+        form.setFieldsValue({ customer_id: customerId });
+      }
     }
-  }, [visible]);
+  }, [visible, customerId, form]);
 
   const fetchData = async () => {
     setLoading(true);

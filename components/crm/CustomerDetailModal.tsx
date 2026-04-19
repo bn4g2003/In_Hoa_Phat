@@ -13,9 +13,14 @@ import {
   InfoCircleOutlined, 
   UserOutlined,
   DeleteOutlined,
-  PlusOutlined
+  PlusOutlined,
+  EyeOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
 import { supabase } from '@/lib/supabase';
+import OrderDetailModal from '../orders/OrderDetailModal';
+import CreateOrderModal from '../orders/CreateOrderModal';
+import { Progress } from 'antd';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -37,6 +42,9 @@ export default function CustomerDetailModal({ visible, customer, onClose, onRefr
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [orderDetailVisible, setOrderDetailVisible] = useState(false);
+  const [createOrderVisible, setCreateOrderVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   useEffect(() => {
     if (visible && customer) {
@@ -186,20 +194,54 @@ export default function CustomerDetailModal({ visible, customer, onClose, onRefr
       title: 'Trạng thái', 
       dataIndex: 'status', 
       key: 'status', 
-      render: (s: string) => <Tag color={s === 'completed' ? 'green' : 'blue'}>{s.toUpperCase()}</Tag> 
+      render: (status: string) => {
+        const configs: any = {
+          completed: { color: 'green', label: 'HOÀN TẤT' },
+          in_progress: { color: 'blue', label: 'SẢN XUẤT' },
+          pending: { color: 'orange', label: 'CHỜ XỬ LÝ' }
+        };
+        const cfg = configs[status] || { color: 'default', label: status.toUpperCase() };
+        return <Tag color={cfg.color} className="rounded-md font-medium">{cfg.label}</Tag>;
+      }
+    },
+    { 
+      title: 'Tiến độ', 
+      key: 'progress', 
+      width: 120,
+      render: (record: any) => {
+        // Simple heuristic for progress if not calculated
+        const statusMap: any = { completed: 100, in_progress: 50, pending: 0 };
+        const percent = statusMap[record.status] || 0;
+        return <Progress percent={percent} size="small" strokeColor={percent === 100 ? '#52c41a' : '#1890ff'} />;
+      }
     },
     { 
       title: 'Tổng tiền', 
       key: 'total', 
       align: 'right' as const,
-      render: (record: any) => record.financials?.total_with_vat?.toLocaleString() + ' đ'
+      render: (record: any) => <Text strong>{record.financials?.total_with_vat?.toLocaleString()} đ</Text>
     },
     { 
       title: 'Ngày lên đơn', 
       dataIndex: 'created_at', 
       key: 'created_at', 
-      render: (d: string) => new Date(d).toLocaleDateString('vi-VN') 
+      render: (d: string) => <Text type="secondary">{new Date(d).toLocaleDateString('vi-VN')}</Text> 
     },
+    {
+      title: 'Thao tác',
+      key: 'action',
+      align: 'center' as const,
+      render: (record: any) => (
+        <Button 
+          type="text" 
+          icon={<EyeOutlined className="text-blue-500" />} 
+          onClick={() => {
+            setSelectedOrder(record);
+            setOrderDetailVisible(true);
+          }}
+        />
+      )
+    }
   ];
 
   const tabItems = [
@@ -281,10 +323,21 @@ export default function CustomerDetailModal({ visible, customer, onClose, onRefr
     },
     {
       key: '2',
-      label: <span><ShoppingCartOutlined /> Danh sách Lệnh sản xuất</span>,
+      label: <span><ShoppingCartOutlined /> Đơn hàng & LSX</span>,
       disabled: !customer,
       children: (
         <div className="p-4">
+          <div className="flex justify-between items-center mb-4">
+            <Text strong className="text-lg">Danh sách đơn hàng của khách</Text>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={() => setCreateOrderVisible(true)}
+              className="bg-indigo-600 border-none"
+            >
+              Tạo đơn mới
+            </Button>
+          </div>
           <Table 
             columns={orderColumns} 
             dataSource={orders} 
@@ -292,7 +345,8 @@ export default function CustomerDetailModal({ visible, customer, onClose, onRefr
             loading={loadingOrders}
             pagination={{ pageSize: 5 }}
             size="middle"
-            locale={{ emptyText: <Empty description="Chưa có lệnh sản xuất nào" /> }}
+            locale={{ emptyText: <Empty description="Chưa có đơn hàng nào" /> }}
+            className="border border-slate-100 rounded-lg overflow-hidden"
           />
         </div>
       ),
@@ -381,6 +435,26 @@ export default function CustomerDetailModal({ visible, customer, onClose, onRefr
       >
         <Tabs defaultActiveKey="1" items={tabItems} destroyOnHidden />
       </Modal>
+
+      <OrderDetailModal 
+        visible={orderDetailVisible} 
+        order={selectedOrder} 
+        onClose={() => setOrderDetailVisible(false)} 
+        onRefresh={fetchOrders}
+      />
+
+      <CreateOrderModal 
+        visible={createOrderVisible} 
+        customerId={customer?.id}
+        onClose={() => {
+          setCreateOrderVisible(false);
+          fetchOrders();
+          onRefresh?.();
+        }}
+        // In a real app, we might want to pre-select the customer
+        // But the CreateOrderModal needs to support it. 
+        // For now, it will open a fresh modal.
+      />
 
       <Modal
         title="Ghi nhận thanh toán"
