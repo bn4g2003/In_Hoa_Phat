@@ -11,6 +11,7 @@ import {
   ClockCircleOutlined, 
   DatabaseOutlined, 
   PlayCircleOutlined, 
+  ReloadOutlined,
   SaveOutlined, 
   StopOutlined, 
   ThunderboltOutlined, 
@@ -54,6 +55,22 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loadingMachines, setLoadingMachines] = useState(false);
   const [orderDetailVisible, setOrderDetailVisible] = useState(false);
+  const [liveHoldSeconds, setLiveHoldSeconds] = useState(0);
+
+  useEffect(() => {
+    let interval: any;
+    if (visible && task && (task.status === 'on_hold' || task.status === 'issue') && task.hold_start_time) {
+      const updateLiveTime = () => {
+        const currentHold = dayjs().diff(dayjs(task.hold_start_time), 'second');
+        setLiveHoldSeconds((task.total_hold_seconds || 0) + currentHold);
+      };
+      updateLiveTime();
+      interval = setInterval(updateLiveTime, 10000); // Update every 10s
+    } else if (task) {
+      setLiveHoldSeconds(task.total_hold_seconds || 0);
+    }
+    return () => clearInterval(interval);
+  }, [visible, task]);
 
   useEffect(() => {
     const currentUser = getUser();
@@ -109,18 +126,24 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
       };
 
       // KPI Logic: Tracking hold time and processing time
-      if (newStatus === 'in_progress') {
-        if (task.status === 'ready') {
-          updates.start_time = now;
-          updates.kpi_start_time = now;
-        } else if (task.status === 'on_hold' && task.hold_start_time) {
+      if (newStatus === 'in_progress' && task.status === 'ready') {
+        updates.start_time = now;
+        updates.kpi_start_time = now;
+      }
+
+      // If leaving hold/issue status, accumulate duration
+      if ((task.status === 'on_hold' || task.status === 'issue') && task.hold_start_time) {
+        if (newStatus !== task.status) {
           const holdSecs = dayjs(now).diff(dayjs(task.hold_start_time), 'second');
           updates.total_hold_seconds = (task.total_hold_seconds || 0) + holdSecs;
           updates.hold_start_time = null;
         }
-      } else if (newStatus === 'on_hold') {
+      }
+
+      // If entering hold/issue status, start timer
+      if (newStatus === 'on_hold' || newStatus === 'issue') {
         updates.hold_start_time = now;
-        if (additionalData.material_shortage) {
+        if (newStatus === 'on_hold' && additionalData.material_shortage) {
           updates.kpi_transferred_to = 7;
           updates.kpi_transferred_at = now;
         }
@@ -285,10 +308,11 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
             <Col span={8}>
               <Card size="small" className="text-center shadow-inner bg-gray-50 border-none">
                 <Statistic 
-                  title="Thời gian hoãn" 
-                  value={Math.round((task?.total_hold_seconds || 0) / 60)} 
+                  title="Tổng thời gian hoãn" 
+                  value={Math.round(liveHoldSeconds / 60)} 
                   suffix="phút" 
                   valueStyle={{ fontSize: 18, fontWeight: 'bold' }} 
+                  prefix={<ClockCircleOutlined className={task?.status === 'on_hold' || task?.status === 'issue' ? 'text-orange-500 animate-pulse' : ''} />}
                 />
               </Card>
             </Col>
@@ -311,9 +335,10 @@ export default function TaskActionModal({ visible, task, onClose, onRefresh }: T
           )}
 
           <div className="flex flex-wrap gap-4 justify-center py-6">
-            {(task?.status === 'ready' || task?.status === 'on_hold') && !isKho2ResolvingMaterial && (
+            {(task?.status === 'ready' || task?.status === 'on_hold' || task?.status === 'issue') && !isKho2ResolvingMaterial && (
               <Button 
-                type="primary" size="large" icon={<PlayCircleOutlined />} 
+                type="primary" size="large" 
+                icon={task?.status === 'ready' ? <PlayCircleOutlined /> : <ReloadOutlined />} 
                 onClick={() => handleStatusChange('in_progress')}
                 loading={submitting}
                 className="h-16 px-12 text-lg rounded-2xl shadow-lg border-none bg-gradient-to-r from-blue-600 to-indigo-600"
